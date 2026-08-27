@@ -1,5 +1,7 @@
 import turtle
 import utils
+import time
+import math
 
 class Coord:
     def __init__(self, x, y):
@@ -85,6 +87,7 @@ class HitboxObject:
         self.origin = origin
 
     def intersects(self, other):
+        '''Also, note that this method assumes that both objects are in the same Display or Screen.'''
         raise NotImplementedError("Subclasses must implement the intersects method.")
 
 class HitboxRect(HitboxObject):
@@ -160,10 +163,14 @@ class HitboxPoint(HitboxObject):
 
 class Object:
     '''A class containing shapes. Its master is either a Display or Screen.'''
-    def __init__(self, master, shapes=None, hitbox=None):
+    def __init__(self, master, origin, shapes=None, hitbox=None):
         self.master = master
+        self.origin = origin
         self.shapes = shapes
-        self.hitbox = hitbox
+        if hitbox is None:
+            self.hitbox = Hitbox([])
+        else:
+            self.hitbox = hitbox
 
     def draw(self):
         if self.shapes:
@@ -175,6 +182,80 @@ class Object:
         if self.hitbox and other.hitbox:
             return self.hitbox.intersects(other.hitbox)
         return False
+
+class Interpolation:
+    '''A class for interpolation between two points.'''
+    def __init__(self, start, duration, point1, point2):
+        self.start = start
+        self.duration = duration
+        self.point1 = point1
+        self.point2 = point2
+
+    def interpolate(self):
+        raise NotImplementedError("Subclasses must implement the interpolate method.")
+
+class LinTerp(Interpolation):
+    '''A class for linear interpolation between two points.'''
+    def interpolate(self):
+        current_time = time.time()
+        if current_time < self.start:
+            return self.point1
+        elif current_time > self.start + self.duration:
+            return self.point2
+        else:
+            t = (current_time - self.start) / self.duration
+            x = (1 - t) * self.point1.x + t * self.point2.x
+            y = (1 - t) * self.point1.y + t * self.point2.y
+            return Coord(x, y)
+
+class SmoothStep(Interpolation):
+    '''A class for smooth step interpolation between two points.'''
+    def interpolate(self):
+        current_time = time.time()
+        if current_time < self.start:
+            return self.point1
+        elif current_time > self.start + self.duration:
+            return self.point2
+        else:
+            t = (current_time - self.start) / self.duration
+            t = t * t * (3 - 2 * t)  # Smoothstep function
+            x = (1 - t) * self.point1.x + t * self.point2.x
+            y = (1 - t) * self.point1.y + t * self.point2.y
+            return Coord(x, y)
+
+class SmootherStep(Interpolation):
+    '''A class for smoother step interpolation between two points.'''
+    def interpolate(self):
+        current_time = time.time()
+        if current_time < self.start:
+            return self.point1
+        elif current_time > self.start + self.duration:
+            return self.point2
+        else:
+            t = (current_time - self.start) / self.duration
+            t = t * t * t * (t * (6 * t - 15) + 10)  # Smootherstep function
+            x = (1 - t) * self.point1.x + t * self.point2.x
+            y = (1 - t) * self.point1.y + t * self.point2.y
+            return Coord(x, y)
+
+class TanhTween(Interpolation):
+    '''A class for smoother step interpolation between two points.'''
+    def __init__(self, start, duration, point1, point2, sharpness=3):
+        super().__init__(start, duration, point1, point2)
+        self.sharpness = sharpness
+    
+    def interpolate(self):
+        current_time = time.time()
+        if current_time < self.start:
+            return self.point1
+        elif current_time > self.start + self.duration:
+            return self.point2
+        else:
+            t = (current_time - self.start) / self.duration
+            t = utils.tanhtween(t, self.sharpness)
+            x = (1 - t) * self.point1.x + t * self.point2.x
+            y = (1 - t) * self.point1.y + t * self.point2.y
+            return Coord(x, y)
 
 class VizWiz:
     def __init__(self, width=800, height=600, title="VizWiz Visualization"):
