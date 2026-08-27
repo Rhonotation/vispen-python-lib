@@ -1,5 +1,6 @@
 """
-Vispen v1.0
+Vispen v1.1
+Features: Mouse functionality
 """
 from __future__ import annotations
 from typing import Sequence
