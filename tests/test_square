@@ -1,0 +1,38 @@
+import time
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
+from vispen.vizwiz import Engine, Display, Object, Coord, Rect, TanhTween
+
+if __name__ == "__main__":
+    engine = Engine()
+
+    display = Display(
+        master=engine.viz,
+        origin=Coord(-200, -150),
+        top_right=Coord(200, 150),
+        id="main",
+        scale=20
+    )
+    engine.add_display("main", display)
+
+    box = Object(
+        master=display,
+        origin=Coord(0, 0),
+        id="box",
+        shapes=[Rect(Coord(0, 0), Coord(2, 2))]
+    )
+    display.objects["box"] = box
+
+    start = time.time()
+
+    # Move in a square
+    display.add_tween("box", TanhTween(start, 2, Coord(0, 0), Coord(10, 0), 3))
+    display.add_tween("box", TanhTween(start+2, 2, Coord(10, 0), Coord(10, 10), 3))
+    display.add_tween("box", TanhTween(start+4, 2, Coord(10, 10), Coord(0, 10), 3))
+    display.add_tween("box", TanhTween(start+6, 2, Coord(0, 10), Coord(0, 0), 3))
+    print(display.tweens)
+
+    while True:
+        engine.draw_frame()
+        time.sleep(1/60)

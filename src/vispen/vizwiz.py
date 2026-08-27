@@ -1,5 +1,7 @@
+import tkinter
+tkinter.NoDefaultRoot()
 import turtle
-import utils
+from vispen import utils
 import time
 import math
 
@@ -248,6 +250,27 @@ class Object:
         '''Converts a point from the object's local coordinates to the master's coordinates.'''
         return point + self.origin
 
+class TweenChain:
+    def __init__(self, tweens):
+        self.tweens = tweens
+        self.index = 0
+
+    def active(self):
+        return self.index < len(self.tweens)
+
+    def interpolate(self):
+        if not self.active():
+            return None
+
+        current = self.tweens[self.index]
+        value = current.interpolate()
+
+        # If the current tween finished, move to the next one
+        if not current.active():
+            self.index += 1
+
+        return value
+
 class Interpolation:
     '''A class for interpolation between two points.'''
     def __init__(self, start, duration, point1, point2):
@@ -255,6 +278,10 @@ class Interpolation:
         self.duration = duration
         self.point1 = point1
         self.point2 = point2
+
+    def active(self):
+        current_time = time.time()
+        return self.start <= current_time <= self.start + self.duration
 
     def interpolate(self):
         raise NotImplementedError("Subclasses must implement the interpolate method.")
@@ -325,6 +352,7 @@ class TanhTween(Interpolation):
 class VizWiz:
     def __init__(self, width=800, height=600, title="VizWiz Visualization"):
         self.screen = turtle.Screen()
+        self.screen.tracer(0)
         self.screen.setup(width, height)
         self.screen.title(title)
         self.screen.bgcolor("white")
@@ -333,7 +361,6 @@ class VizWiz:
         self.turtle.speed(0)
         self.turtle.penup()
         self.displays = {}
-        self.screen.tracer(0)
 
     def add_display(self, obj):
         if isinstance(obj, Display) or isinstance(obj, Screen):
