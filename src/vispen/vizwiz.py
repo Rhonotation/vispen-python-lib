@@ -265,7 +265,7 @@ class HitboxObject:
 
     def on_mouse(self) -> bool:
         """Check intersection with mouse."""
-        raise NotImplementedError("Subclasses must implement the on_mouse method.")
+        return self.intersects(self.master.get_mouse_as_hitbox())
 
 
 class HitboxRect(HitboxObject):
