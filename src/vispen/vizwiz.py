@@ -47,8 +47,12 @@ class Coord:
             raise ValueError(f"Attempted to divide Coord by {type(other).__name__}. Can only divide Coord by int, float, or Coord.")
 
 class Shape:
-    def __init__(self, origin):
+    def __init__(self, origin, specs=None):
         self.origin = origin
+        self.specs = specs if specs is not None else {}
+
+    def modify_specs(self, new_specs):
+        self.specs.update(new_specs)
 
     def shift(self, point):
         raise NotImplementedError("Subclasses must implement the shift method.")
@@ -56,28 +60,40 @@ class Shape:
     def draw(self, master):
         raise NotImplementedError("Subclasses must implement the draw method.")
 
+class Segment(Shape):
+    def __init__(self, origin, end, specs=None):
+        super().__init__(origin, specs)
+        self.end = end
+
+    def shift(self, point):
+        self.origin = self.origin + point
+        self.end = self.end + point
+
+    def draw(self, master, specs=None):
+        master.create_line(self.origin, self.end, specs)
+
 class Rect(Shape):
-    def __init__(self, origin, top_right):
-        self.origin = origin
+    def __init__(self, origin, top_right, specs=None):
+        super().__init__(origin, specs)
         self.top_right = top_right
 
     def shift(self, point):
         self.origin = self.origin + point
         self.top_right = self.top_right + point
 
-    def draw(self, master):
-        master.create_rectangle(self.origin, self.top_right)
+    def draw(self, master, specs=None):
+        master.create_rectangle(self.origin, self.top_right, specs)
 
 class Circle(Shape):
-    def __init__(self, origin, radius):
-        self.origin = origin
+    def __init__(self, origin, radius, specs=None):
+        super().__init__(origin, specs)
         self.radius = radius
 
     def shift(self, point):
         self.origin = self.origin + point
 
-    def draw(self, master):
-        master.create_circle(self.origin, self.radius)
+    def draw(self, master, specs=None):
+        master.create_circle(self.origin, self.radius, specs)
 
 class Hitbox:
     '''A class representing a hitbox for collision detection. It contains rectangles, circles, and points.'''
@@ -238,7 +254,7 @@ class Object:
     def draw(self):
         if self.shapes:
             for shape in self.shapes:
-                shape.draw(self.master)
+                shape.draw(self.master, shape.specs)
 
     def intersects(self, other):
         '''Checks intersection.'''
@@ -414,11 +430,12 @@ class VizWiz:
             display.draw()
         self.screen.update()
 
-    def create_rectangle(self, origin, top_right, fill=True, color="black", width=1):
+    def create_rectangle(self, origin, top_right, fill=True, color="black", fill_color="black", width=1):
         self.turtle.color(color)
         self.turtle.width(width)
         if fill:
             self.turtle.begin_fill()
+            self.turtle.fillcolor(fill_color)
         self.turtle.goto(origin.x, origin.y)
         self.turtle.pendown()
         self.turtle.goto(top_right.x, origin.y)
@@ -429,17 +446,26 @@ class VizWiz:
         if fill:
             self.turtle.end_fill()
 
-    def create_circle(self, origin, radius, fill=True, color="black", width=1):
+    def create_circle(self, origin, radius, fill=True, color="black", fill_color="black", width=1):
         self.turtle.color(color)
         self.turtle.width(width)
         if fill:
             self.turtle.begin_fill()
+            self.turtle.fillcolor(fill_color)
         self.turtle.goto(origin.x, origin.y - radius)
         self.turtle.pendown()
         self.turtle.circle(radius)
         self.turtle.penup()
         if fill:
             self.turtle.end_fill()
+
+    def create_line(self, origin, end, color="black", width=1):
+        self.turtle.color(color)
+        self.turtle.width(width)
+        self.turtle.goto(origin.x, origin.y)
+        self.turtle.pendown()
+        self.turtle.goto(end.x, end.y)
+        self.turtle.penup()
 
 class Display:
     '''Fixed screen for drawing.'''
@@ -470,11 +496,20 @@ class Display:
         for obj in self.objects.values():
             obj.draw()
 
-    def create_rectangle(self, origin, top_right):
-        self.master.create_rectangle(origin * self.scale + self.origin, top_right * self.scale + self.origin)
+    def create_rectangle(self, origin, top_right, specs=None):
+        if specs is None:
+            specs = {}
+        self.master.create_rectangle(origin * self.scale + self.origin, top_right * self.scale + self.origin, **specs)
 
-    def create_circle(self, origin, radius):
-        self.master.create_circle(origin * self.scale + self.origin, radius * self.scale)
+    def create_circle(self, origin, radius, specs=None):
+        if specs is None:
+            specs = {}
+        self.master.create_circle(origin * self.scale + self.origin, radius * self.scale, **specs)
+
+    def create_line(self, origin, end, specs=None):
+        if specs is None:
+            specs = {}
+        self.master.create_line(origin * self.scale + self.origin, end * self.scale + self.origin, **specs)
 
 class Screen(Display):
     '''A screen that can be panned and zoomed.'''

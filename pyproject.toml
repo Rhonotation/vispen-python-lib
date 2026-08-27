@@ -1,0 +1,18 @@
+[project]
+name = "vispen"
+version = "0.1.0"
+description = "A lightweight 'game engine' built on Python's turtle graphics."
+authors = [
+    { name = "Rhonotation" }
+]
+readme = "README.md"
+license = { text = "Apache 2.0" }
+requires-python = ">=3.10"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
