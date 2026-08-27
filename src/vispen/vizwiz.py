@@ -3,7 +3,6 @@ tkinter.NoDefaultRoot()
 import turtle
 from vispen import utils
 import time
-import math
 
 class Coord:
     def __init__(self, x, y):
@@ -59,6 +58,17 @@ class Shape:
 
     def draw(self, master):
         raise NotImplementedError("Subclasses must implement the draw method.")
+
+class Text(Shape):
+    def __init__(self, origin, text, specs=None):
+        super().__init__(origin, specs)
+        self.text = text
+
+    def shift(self, point):
+        self.origin = self.origin + point
+
+    def draw(self, master, specs=None):
+        master.create_text(self.origin, self.text, specs)
 
 class Segment(Shape):
     def __init__(self, origin, end, specs=None):
@@ -413,6 +423,11 @@ class VizWiz:
         self.turtle.speed(0)
         self.turtle.penup()
         self.displays = {}
+        self.screen.onscreenclick(on_move, btn=0)
+        self.screen.onscreenclick(on_left_click, btn=1)
+        self.screen.onscreenclick(on_right_click, btn=3)
+        self.screen.onscreenclick(on_middle_click, btn=2)
+        self.turtle.onrelease(on_release)
 
     def add_display(self, obj):
         if isinstance(obj, Display) or isinstance(obj, Screen):
@@ -467,6 +482,11 @@ class VizWiz:
         self.turtle.goto(end.x, end.y)
         self.turtle.penup()
 
+    def create_text(self, origin, text, color="black", font=("Arial", 12, "normal")):
+        self.turtle.color(color)
+        self.turtle.goto(origin.x, origin.y)
+        self.turtle.write(text, font=font)
+
 class Display:
     '''Fixed screen for drawing.'''
     def __init__(self, master, origin, top_right, id, objects = None, scale = 20):
@@ -511,6 +531,11 @@ class Display:
             specs = {}
         self.master.create_line(origin * self.scale + self.origin, end * self.scale + self.origin, **specs)
 
+    def create_text(self, origin, text, specs=None):
+        if specs is None:
+            specs = {}
+        self.master.create_text(origin * self.scale + self.origin, text, **specs)
+
 class Screen(Display):
     '''A screen that can be panned and zoomed.'''
     def __init__(self, master, origin, top_right, id, objects = None, scale = 20):
@@ -541,3 +566,35 @@ class Engine:
             display.update_tweens()
             display.draw()
         self.viz.screen.update()
+
+mouse_pos = None
+left_click_down = False
+right_click_down = False
+middle_click_down = False
+mouse_down = False
+
+def on_move(x, y):
+    global mouse_pos
+    mouse_pos = (x, y)
+
+def on_left_click(x, y):
+    global left_click_down, mouse_down
+    left_click_down = True
+    mouse_down = True
+
+def on_right_click(x, y):
+    global right_click_down, mouse_down
+    right_click_down = True
+    mouse_down = True
+
+def on_middle_click(x, y):
+    global middle_click_down, mouse_down
+    middle_click_down = True
+    mouse_down = True
+
+def on_release(x, y):
+    global left_click_down, right_click_down, middle_click_down, mouse_down
+    left_click_down = False
+    right_click_down = False
+    middle_click_down = False
+    mouse_down = False
