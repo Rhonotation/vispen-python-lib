@@ -1,0 +1,40 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# VS Code settings
+.vscode/
+
+# MacOS junk
+.DS_Store
+
+# Turtle graphics window cache (sometimes created)
+turtle.cfg
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+
+# Jupyter (if you ever use it)
+.ipynb_checkpoints/
+
+# Coverage / testing
+.coverage
+htmlcov/
+.cache/

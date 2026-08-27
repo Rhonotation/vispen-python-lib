@@ -250,7 +250,7 @@ class Object:
         '''Converts a point from the object's local coordinates to the master's coordinates.'''
         return point + self.origin
 
-class TweenChain:
+class MultInterp:
     def __init__(self, tweens):
         self.tweens = tweens
         self.index = 0
@@ -258,15 +258,47 @@ class TweenChain:
     def active(self):
         return self.index < len(self.tweens)
 
+    def finished(self):
+        return self.index >= len(self.tweens)
+
     def interpolate(self):
         if not self.active():
-            return None
+            return self.tweens[-1].point2  # Return the last point if all tweens are finished
 
         current = self.tweens[self.index]
         value = current.interpolate()
+        print(f"Current tween index: {self.index}, Value: ({value.x}, {value.y})")  # Debugging line
 
         # If the current tween finished, move to the next one
-        if not current.active():
+        if current.finished():
+            self.index += 1
+
+        return value
+
+class Looper(MultInterp):
+    def __init__(self, tweens):
+        self.tweens = tweens
+        self.index = 0
+        self.start_time = time.time()
+
+    def interpolate(self):
+        if not self.active():
+            for tween in self.tweens:
+                if isinstance(tween, MultInterp):
+                    for stween in tween.tweens:
+                        stween.start += time.time() - self.start_time  # Reset start time for each tween
+                        tween.index = 0
+                else:
+                    tween.start += time.time() - self.start_time  # Reset start time for each tween
+                    self.start_time = time.time()
+            self.index = 0
+
+        current = self.tweens[self.index]
+        value = current.interpolate()
+        print(f"Current tween index: {self.index}, Value: ({value.x}, {value.y})")  # Debugging line
+
+        # If the current tween finished, move to the next one
+        if current.finished():
             self.index += 1
 
         return value
@@ -279,9 +311,13 @@ class Interpolation:
         self.point1 = point1
         self.point2 = point2
 
+    def finished(self):
+        current_time = time.time()
+        return current_time > self.start + self.duration
+
     def active(self):
         current_time = time.time()
-        return self.start <= current_time <= self.start + self.duration
+        return (self.start <= current_time) and (current_time <= self.start + self.duration)
 
     def interpolate(self):
         raise NotImplementedError("Subclasses must implement the interpolate method.")
