@@ -427,3 +427,18 @@ class Screen(Display):
 
     def convert(self, point):
         return (point * self.scale * self.zoom_factor) + self.origin + self.pan_offset
+
+class Engine:
+    def __init__(self):
+        self.viz = VizWiz()
+        self.displays = {}
+
+    def add_display(self, id, display):
+        self.displays[id] = display
+
+    def draw_frame(self):
+        self.viz.turtle.clear()
+        for display in self.displays.values():
+            display.update_tweens()
+            display.draw()
+        self.viz.screen.update()
