@@ -6,3 +6,5 @@ def distance(point1, point2):
 
 def tanhtween(t, sharpness):
     return (math.tanh(sharpness * t - sharpness / 2) - math.tanh(-sharpness / 2)) / (math.tanh(sharpness / 2) - math.tanh(-sharpness / 2))
+
+loop = 10 ** 8

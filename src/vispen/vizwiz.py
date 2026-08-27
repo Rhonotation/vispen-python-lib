@@ -103,9 +103,13 @@ class Hitbox:
 
 class HitboxObject:
     '''A class representing a basic hitbox object.'''
-    def __init__(self, hitbox, origin):
+    def __init__(self, hitbox, origin, master):
         self.hitbox = hitbox
         self.origin = origin
+        self.master = master
+
+    def convert(self):
+        return self.master.convert(self.origin)
 
     def shift(self, point):
         raise NotImplementedError("Subclasses must implement the shift method.")
@@ -115,26 +119,29 @@ class HitboxObject:
         raise NotImplementedError("Subclasses must implement the intersects method.")
 
 class HitboxRect(HitboxObject):
-    def __init__(self, hitbox, origin, top_right):
-        super().__init__(hitbox, origin)
+    def __init__(self, hitbox, origin, top_right, master):
+        super().__init__(hitbox, origin, master)
         self.top_right = top_right
 
     def shift(self, point):
         self.origin = self.origin + point
         self.top_right = self.top_right + point
 
+    def convert(self):
+        return self.master.convert(self.origin), self.master.convert(self.top_right)
+
     def intersects(self, other):
         if isinstance(other, HitboxRect):
-            return not (self.top_right.x < other.origin.x or self.origin.x > other.top_right.x or
-                        self.top_right.y < other.origin.y or self.origin.y > other.top_right.y)
+            return not (self.convert()[1].x < other.convert()[0].x or self.convert()[0].x > other.convert()[1].x or
+                        self.convert()[1].y < other.convert()[0].y or self.convert()[0].y > other.convert()[1].y)
         elif isinstance(other, HitboxCircle):
-            closest_x = max(self.origin.x, min(other.origin.x, self.top_right.x))
-            closest_y = max(self.origin.y, min(other.origin.y, self.top_right.y))
+            closest_x = max(self.convert()[0].x, min(other.origin.x, self.convert()[1].x))
+            closest_y = max(self.convert()[0].y, min(other.origin.y, self.convert()[1].y))
             distance = utils.distance(Coord(closest_x, closest_y), other.origin)
             return distance < other.radius
         elif isinstance(other, HitboxPoint):
-            return (other.origin.x >= self.origin.x and other.origin.x <= self.top_right.x and
-                    other.origin.y >= self.origin.y and other.origin.y <= self.top_right.y)
+            return (other.convert().x >= self.convert()[0].x and other.convert().x <= self.convert()[1].x and
+                    other.convert().y >= self.convert()[0].y and other.convert().y <= self.convert()[1].y)
         elif isinstance(other, Hitbox):
             for shape in other.shapes:
                 if self.intersects(shape):
@@ -144,24 +151,27 @@ class HitboxRect(HitboxObject):
             raise NotImplementedError("Intersection not implemented for this shape type.")
 
 class HitboxCircle(HitboxObject):
-    def __init__(self, hitbox, origin, radius):
-        super().__init__(hitbox, origin)
+    def __init__(self, hitbox, origin, radius, master):
+        super().__init__(hitbox, origin, master)
         self.radius = radius
 
     def shift(self, point):
         self.origin = self.origin + point
 
+    def convert(self):
+        return self.master.convert(self.origin)
+
     def intersects(self, other):
         if isinstance(other, HitboxCircle):
-            distance = utils.distance(self.origin, other.origin)
+            distance = utils.distance(self.convert(), other.convert())
             return distance < (self.radius + other.radius)
         elif isinstance(other, HitboxRect):
-            closest_x = max(other.origin.x, min(self.origin.x, other.top_right.x))
-            closest_y = max(other.origin.y, min(self.origin.y, other.top_right.y))
-            distance = utils.distance(self.origin, Coord(closest_x, closest_y))
+            closest_x = max(other.convert()[0].x, min(self.convert().x, other.convert()[1].x))
+            closest_y = max(other.convert()[0].y, min(self.convert().y, other.convert()[1].y))
+            distance = utils.distance(self.convert(), Coord(closest_x, closest_y))
             return distance < self.radius
         elif isinstance(other, HitboxPoint):
-            distance = utils.distance(self.origin, other.origin)
+            distance = utils.distance(self.convert(), other.convert())
             return distance < self.radius
         elif isinstance(other, Hitbox):
             for shape in other.shapes:
@@ -172,21 +182,24 @@ class HitboxCircle(HitboxObject):
             raise NotImplementedError("Intersection not implemented for this shape type.")
 
 class HitboxPoint(HitboxObject):
-    def __init__(self, hitbox, origin):
-        super().__init__(hitbox, origin)
+    def __init__(self, hitbox, origin, master):
+        super().__init__(hitbox, origin, master)
 
     def shift(self, point):
         self.origin = self.origin + point
 
+    def convert(self):
+        return self.master.convert(self.origin)
+
     def intersects(self, other):
         if isinstance(other, HitboxCircle):
-            distance = utils.distance(self.origin, other.origin)
+            distance = utils.distance(self.convert(), other.convert())
             return distance < other.radius
         elif isinstance(other, HitboxRect):
-            return (self.origin.x >= other.origin.x and self.origin.x <= other.top_right.x and
-                    self.origin.y >= other.origin.y and self.origin.y <= other.top_right.y)
+            return (self.convert().x >= other.convert()[0].x and self.convert().x <= other.convert()[1].x and
+                    self.convert().y >= other.convert()[0].y and self.convert().y <= other.convert()[1].y)
         elif isinstance(other, HitboxPoint):
-            return self.origin.x == other.origin.x and self.origin.y == other.origin.y
+            return self.convert().x == other.convert().x and self.convert().y == other.convert().y
         elif isinstance(other, Hitbox):
             for shape in other.shapes:
                 if self.intersects(shape):
@@ -197,9 +210,10 @@ class HitboxPoint(HitboxObject):
 
 class Object:
     '''A class containing shapes. Its master is either a Display or Screen.'''
-    def __init__(self, master, origin, shapes=None, hitbox=None):
+    def __init__(self, master, origin, id, shapes=None, hitbox=None):
         self.master = master
         self.origin = origin
+        self.id = id
         if shapes is None:
             shapes = []
         self.shapes = shapes
@@ -215,6 +229,10 @@ class Object:
             for shape in self.shapes:
                 shape.shift(point)
 
+    def move(self, point):
+        self.shift(point - self.origin)
+        self.draw()
+
     def draw(self):
         if self.shapes:
             for shape in self.shapes:
@@ -225,6 +243,10 @@ class Object:
         if self.hitbox and other.hitbox:
             return self.hitbox.intersects(other.hitbox)
         return False
+
+    def convert(self, point):
+        '''Converts a point from the object's local coordinates to the master's coordinates.'''
+        return point + self.origin
 
 class Interpolation:
     '''A class for interpolation between two points.'''
@@ -310,6 +332,23 @@ class VizWiz:
         self.turtle.hideturtle()
         self.turtle.speed(0)
         self.turtle.penup()
+        self.displays = {}
+
+    def add_display(self, obj):
+        if isinstance(obj, Display) or isinstance(obj, Screen):
+            self.displays[obj.id] = obj
+        self.displays[obj.id] = obj
+
+    def remove_display(self, id):
+        if id in self.displays:
+            del self.displays[id]
+
+    def draw_frame(self):
+        self.turtle.clear()
+        for display in self.displays.values():
+            display.update_tweens()
+            display.draw()
+        self.screen.update()
 
     def create_rectangle(self, origin, top_right, fill=True, color="black", width=1):
         self.turtle.color(color)
@@ -340,17 +379,51 @@ class VizWiz:
 
 class Display:
     '''Fixed screen for drawing.'''
-    def __init__(self, master, origin, top_right, shapes = None, scale = 20):
-        if shapes is None:
-            shapes = []
+    def __init__(self, master, origin, top_right, id, objects = None, scale = 20):
+        if objects is None:
+            objects = {}
         self.master = master
         self.origin = origin
         self.top_right = top_right
-        self.shapes = shapes
+        self.id = id
+        self.objects = objects
         self.scale = scale
+        self.tweens = {}
+
+    def add_tween(self, id, tween):
+        self.tweens[id] = tween
+
+    def remove_tween(self, id):
+        if id in self.tweens:
+            del self.tweens[id]
+
+    def update_tweens(self):
+        for id, tween in self.tweens.items():
+            new_position = tween.interpolate()
+            self.objects[id].move(new_position)
+
+    def draw(self):
+        for obj in self.objects.values():
+            obj.draw()
 
     def create_rectangle(self, origin, top_right):
         self.master.create_rectangle(origin * self.scale + self.origin, top_right * self.scale + self.origin)
 
     def create_circle(self, origin, radius):
         self.master.create_circle(origin * self.scale + self.origin, radius * self.scale)
+
+class Screen(Display):
+    '''A screen that can be panned and zoomed.'''
+    def __init__(self, master, origin, top_right, id, objects = None, scale = 20):
+        super().__init__(master, origin, top_right, id, objects, scale)
+        self.pan_offset = Coord(0, 0)
+        self.zoom_factor = 1.0
+
+    def pan(self, offset):
+        self.pan_offset += offset
+
+    def zoom(self, factor):
+        self.zoom_factor *= factor
+
+    def convert(self, point):
+        return (point * self.scale * self.zoom_factor) + self.origin + self.pan_offset
