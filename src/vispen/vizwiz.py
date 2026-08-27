@@ -13,6 +13,13 @@ class Coord:
             raise ValueError(f"Attempted to add Coord to {type(other).__name__}. Can only add Coord to Coord.")
         return Coord(self.x + other.x, self.y + other.y)
 
+    def __iadd__(self, other):
+        if not isinstance(other, Coord):
+            raise ValueError(f"Attempted to add Coord to {type(other).__name__}. Can only add Coord to Coord.")
+        self.x += other.x
+        self.y += other.y
+        return self
+
     def __mul__(self, other):
         if isinstance(other, (int, float)):
             return Coord(self.x * other, self.y * other)
@@ -41,6 +48,9 @@ class Shape:
     def __init__(self, origin):
         self.origin = origin
 
+    def shift(self, point):
+        raise NotImplementedError("Subclasses must implement the shift method.")
+
     def draw(self, master):
         raise NotImplementedError("Subclasses must implement the draw method.")
 
@@ -48,6 +58,10 @@ class Rect(Shape):
     def __init__(self, origin, top_right):
         self.origin = origin
         self.top_right = top_right
+
+    def shift(self, point):
+        self.origin = self.origin + point
+        self.top_right = self.top_right + point
 
     def draw(self, master):
         master.create_rectangle(self.origin, self.top_right)
@@ -57,13 +71,20 @@ class Circle(Shape):
         self.origin = origin
         self.radius = radius
 
+    def shift(self, point):
+        self.origin = self.origin + point
+
     def draw(self, master):
         master.create_circle(self.origin, self.radius)
 
 class Hitbox:
-    '''A class representing a hitbox for collision detection. It contains rectangles, circles, right triangles, and points.'''
+    '''A class representing a hitbox for collision detection. It contains rectangles, circles, and points.'''
     def __init__(self, shapes):
         self.shapes = shapes
+
+    def shift(self, point):
+        for shape in self.shapes:
+            shape.shift(point)
 
     def intersects(self, other):
         if isinstance(other, HitboxObject):
@@ -86,6 +107,9 @@ class HitboxObject:
         self.hitbox = hitbox
         self.origin = origin
 
+    def shift(self, point):
+        raise NotImplementedError("Subclasses must implement the shift method.")
+
     def intersects(self, other):
         '''Also, note that this method assumes that both objects are in the same Display or Screen.'''
         raise NotImplementedError("Subclasses must implement the intersects method.")
@@ -94,6 +118,10 @@ class HitboxRect(HitboxObject):
     def __init__(self, hitbox, origin, top_right):
         super().__init__(hitbox, origin)
         self.top_right = top_right
+
+    def shift(self, point):
+        self.origin = self.origin + point
+        self.top_right = self.top_right + point
 
     def intersects(self, other):
         if isinstance(other, HitboxRect):
@@ -120,6 +148,9 @@ class HitboxCircle(HitboxObject):
         super().__init__(hitbox, origin)
         self.radius = radius
 
+    def shift(self, point):
+        self.origin = self.origin + point
+
     def intersects(self, other):
         if isinstance(other, HitboxCircle):
             distance = utils.distance(self.origin, other.origin)
@@ -144,6 +175,9 @@ class HitboxPoint(HitboxObject):
     def __init__(self, hitbox, origin):
         super().__init__(hitbox, origin)
 
+    def shift(self, point):
+        self.origin = self.origin + point
+
     def intersects(self, other):
         if isinstance(other, HitboxCircle):
             distance = utils.distance(self.origin, other.origin)
@@ -166,11 +200,20 @@ class Object:
     def __init__(self, master, origin, shapes=None, hitbox=None):
         self.master = master
         self.origin = origin
+        if shapes is None:
+            shapes = []
         self.shapes = shapes
         if hitbox is None:
-            self.hitbox = Hitbox([])
-        else:
-            self.hitbox = hitbox
+            hitbox = Hitbox([])
+        self.hitbox = hitbox
+
+    def shift(self, point):
+        self.origin = self.origin + point
+        if self.hitbox:
+            self.hitbox.shift(point)
+        if self.shapes:
+            for shape in self.shapes:
+                shape.shift(point)
 
     def draw(self):
         if self.shapes:
