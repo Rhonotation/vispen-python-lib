@@ -1,120 +1,232 @@
-import tkinter
-tkinter.NoDefaultRoot()
-import turtle
-from vispen import utils
+"""
+Vispen v1.0
+"""
+from __future__ import annotations
+from typing import Sequence
 import time
+import tkinter
+import turtle
+from typing import Any, Dict, List, Optional
+from vispen import utils
+
+tkinter.NoDefaultRoot()
+
 
 class Coord:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
+    """Class for coordinates that behave like complex numbers."""
 
-    def __add__(self, other):
+    def __init__(self, x: int | float, y: int | float) -> None:
+        """Initialize a coordinate at (x, y)."""
+        self.x: float = float(x)
+        self.y: float = float(y)
+
+    def __add__(self, other: Coord) -> Coord:
+        """Add two coordinates."""
         if not isinstance(other, Coord):
-            raise ValueError(f"Attempted to add Coord to {type(other).__name__}. Can only add Coord to Coord.")
+            raise ValueError(
+                f"Attempted to add Coord to {type(other).__name__}. "
+                "Can only add Coord to Coord."
+            )
         return Coord(self.x + other.x, self.y + other.y)
 
-    def __iadd__(self, other):
+    def __iadd__(self, other: Coord) -> Coord:
+        """Add a coordinate to self in-place."""
         if not isinstance(other, Coord):
-            raise ValueError(f"Attempted to add Coord to {type(other).__name__}. Can only add Coord to Coord.")
+            raise ValueError(
+                f"Attempted to add Coord to {type(other).__name__}. "
+                "Can only add Coord to Coord."
+            )
         self.x += other.x
         self.y += other.y
         return self
 
-    def __mul__(self, other):
+    def __mul__(self, other: Coord | int | float) -> Coord:
+        """Multiply two coordinates, or a coordinate by a scalar."""
         if isinstance(other, (int, float)):
             return Coord(self.x * other, self.y * other)
         elif isinstance(other, Coord):
-            return Coord(self.x * other.x - self.y * other.y, self.x * other.y + self.y * other.x) # complex number multiplication
+            return Coord(
+                self.x * other.x - self.y * other.y,
+                self.x * other.y + self.y * other.x,
+            )
         else:
-            raise ValueError(f"Attempted to multiply Coord by {type(other).__name__}. Can only multiply Coord by int, float, or Coord.")
+            raise ValueError(
+                f"Attempted to multiply Coord by {type(other).__name__}. "
+                "Can only multiply Coord by int, float, or Coord."
+            )
 
-    def __sub__(self, other):
+    def __sub__(self, other: Coord) -> Coord:
+        """Subtract one coordinate from another."""
         if not isinstance(other, Coord):
-            raise ValueError(f"Attempted to subtract {type(other).__name__} from Coord. Can only subtract Coord from Coord.")
+            raise ValueError(
+                f"Attempted to subtract {type(other).__name__} from Coord. "
+                "Can only subtract Coord from Coord."
+            )
         return Coord(self.x - other.x, self.y - other.y)
 
-    def __truediv__(self, other):
+    def __truediv__(self, other: Coord | int | float) -> Coord:
+        """Divide one coordinate by another or by a scalar."""
         if isinstance(other, (int, float)):
             return Coord(self.x / other, self.y / other)
         elif isinstance(other, Coord):
             denom = other.x**2 + other.y**2
             if denom == 0:
                 raise ValueError("Attempted to divide by zero Coord.")
-            return Coord((self.x * other.x + self.y * other.y) / denom, (self.y * other.x - self.x * other.y) / denom) # complex number division
+            return Coord(
+                (self.x * other.x + self.y * other.y) / denom,
+                (self.y * other.x - self.x * other.y) / denom,
+            )
         else:
-            raise ValueError(f"Attempted to divide Coord by {type(other).__name__}. Can only divide Coord by int, float, or Coord.")
+            raise ValueError(
+                f"Attempted to divide Coord by {type(other).__name__}. "
+                "Can only divide Coord by int, float, or Coord."
+            )
+
 
 class Shape:
-    def __init__(self, origin, specs=None):
-        self.origin = origin
-        self.specs = specs if specs is not None else {}
+    """Base class for drawable shapes."""
 
-    def modify_specs(self, new_specs):
+    def __init__(self, origin: Coord, specs: Optional[Dict[str, Any]] = None) -> None:
+        """
+        Initialize the shape.
+
+        origin: relative origin of the shape.
+        specs: drawing specifications (color, fill_color, width, etc.).
+        """
+        self.origin: Coord = origin
+        self.specs: Dict[str, Any] = specs if specs is not None else {}
+
+    def modify_specs(self, new_specs: Dict[str, Any]) -> None:
+        """Update the shape's drawing specifications."""
         self.specs.update(new_specs)
 
-    def shift(self, point):
+    def shift(self, point: Coord) -> None:
+        """Shift the shape by a coordinate acting as a vector."""
         raise NotImplementedError("Subclasses must implement the shift method.")
 
-    def draw(self, master):
+    def draw(self, master: Display | Screen, specs: dict | None = None) -> None:
+        """Draw the shape using the given master."""
         raise NotImplementedError("Subclasses must implement the draw method.")
 
-class Text(Shape):
-    def __init__(self, origin, text, specs=None):
-        super().__init__(origin, specs)
-        self.text = text
 
-    def shift(self, point):
+class Text(Shape):
+    """Text shape."""
+
+    def __init__(
+        self,
+        origin: Coord,
+        text: str,
+        specs: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """
+        Initialize text.
+
+        origin: relative origin.
+        text: string to display.
+        specs: drawing specifications.
+        """
+        super().__init__(origin, specs)
+        self.text: str = text
+
+    def shift(self, point: Coord) -> None:
+        """Shift the text by a coordinate acting as a vector."""
         self.origin = self.origin + point
 
-    def draw(self, master, specs=None):
+    def draw(self, master: "Display | Screen", specs: Optional[Dict[str, Any]] = None) -> None:
+        """Draw the text using the given master."""
+        if specs is None:
+            specs = self.specs
         master.create_text(self.origin, self.text, specs)
 
-class Segment(Shape):
-    def __init__(self, origin, end, specs=None):
-        super().__init__(origin, specs)
-        self.end = end
 
-    def shift(self, point):
+class Segment(Shape):
+    """Line segment shape."""
+
+    def __init__(
+        self,
+        origin: Coord,
+        end: Coord,
+        specs: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Initialize a segment from origin to end."""
+        super().__init__(origin, specs)
+        self.end: Coord = end
+
+    def shift(self, point: Coord) -> None:
+        """Shift the segment by a coordinate acting as a vector."""
         self.origin = self.origin + point
         self.end = self.end + point
 
-    def draw(self, master, specs=None):
+    def draw(self, master: "Display | Screen", specs: Optional[Dict[str, Any]] = None) -> None:
+        """Draw the segment using the given master."""
+        if specs is None:
+            specs = self.specs
         master.create_line(self.origin, self.end, specs)
 
-class Rect(Shape):
-    def __init__(self, origin, top_right, specs=None):
-        super().__init__(origin, specs)
-        self.top_right = top_right
 
-    def shift(self, point):
+class Rect(Shape):
+    """Rectangle shape."""
+
+    def __init__(
+        self,
+        origin: Coord,
+        top_right: Coord,
+        specs: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Initialize a rectangle from origin to top_right."""
+        super().__init__(origin, specs)
+        self.top_right: Coord = top_right
+
+    def shift(self, point: Coord) -> None:
+        """Shift the rectangle by a coordinate acting as a vector."""
         self.origin = self.origin + point
         self.top_right = self.top_right + point
 
-    def draw(self, master, specs=None):
+    def draw(self, master: "Display | Screen", specs: Optional[Dict[str, Any]] = None) -> None:
+        """Draw the rectangle using the given master."""
+        if specs is None:
+            specs = self.specs
         master.create_rectangle(self.origin, self.top_right, specs)
 
-class Circle(Shape):
-    def __init__(self, origin, radius, specs=None):
-        super().__init__(origin, specs)
-        self.radius = radius
 
-    def shift(self, point):
+class Circle(Shape):
+    """Circle shape."""
+
+    def __init__(
+        self,
+        origin: Coord,
+        radius: int | float,
+        specs: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Initialize a circle at origin with given radius."""
+        super().__init__(origin, specs)
+        self.radius: float = float(radius)
+
+    def shift(self, point: Coord) -> None:
+        """Shift the circle by a coordinate acting as a vector."""
         self.origin = self.origin + point
 
-    def draw(self, master, specs=None):
+    def draw(self, master: "Display | Screen", specs: Optional[Dict[str, Any]] = None) -> None:
+        """Draw the circle using the given master."""
+        if specs is None:
+            specs = self.specs
         master.create_circle(self.origin, self.radius, specs)
 
-class Hitbox:
-    '''A class representing a hitbox for collision detection. It contains rectangles, circles, and points.'''
-    def __init__(self, shapes):
-        self.shapes = shapes
 
-    def shift(self, point):
+class Hitbox:
+    """Hitbox composed of shapes for collision detection."""
+
+    def __init__(self, shapes: List[HitboxObject]) -> None:
+        """Initialize a hitbox with a list of hitbox shapes."""
+        self.shapes: List[HitboxObject] = shapes
+
+    def shift(self, point: Coord) -> None:
+        """Shift all shapes in the hitbox."""
         for shape in self.shapes:
             shape.shift(point)
 
-    def intersects(self, other):
+    def intersects(self, other: "Hitbox | HitboxObject") -> bool:
+        """Check intersection with another hitbox or hitbox object."""
         if isinstance(other, HitboxObject):
             for shape in self.shapes:
                 if shape.intersects(other):
@@ -129,47 +241,77 @@ class Hitbox:
         else:
             raise NotImplementedError("Intersection not implemented for this shape type.")
 
-class HitboxObject:
-    '''A class representing a basic hitbox object.'''
-    def __init__(self, hitbox, origin, master):
-        self.hitbox = hitbox
-        self.origin = origin
-        self.master = master
 
-    def convert(self):
+class HitboxObject:
+    """Base class for hitbox shapes."""
+
+    def __init__(self, hitbox: Hitbox, origin: Coord, master: Display) -> None:
+        """Initialize a hitbox object."""
+        self.hitbox: Hitbox = hitbox
+        self.origin: Coord = origin
+        self.master: Display = master
+
+    def convert(self) -> Coord:
+        """Convert local origin to screen coordinates."""
         return self.master.convert(self.origin)
 
-    def shift(self, point):
+    def shift(self, point: Coord) -> None:
+        """Shift the hitbox object."""
         raise NotImplementedError("Subclasses must implement the shift method.")
 
-    def intersects(self, other):
-        '''Also, note that this method assumes that both objects are in the same Display or Screen.'''
+    def intersects(self, other: "HitboxObject | Hitbox") -> bool:
+        """Check intersection with another hitbox object or hitbox."""
         raise NotImplementedError("Subclasses must implement the intersects method.")
 
-class HitboxRect(HitboxObject):
-    def __init__(self, hitbox, origin, top_right, master):
-        super().__init__(hitbox, origin, master)
-        self.top_right = top_right
+    def on_mouse(self) -> bool:
+        """Check intersection with mouse."""
+        raise NotImplementedError("Subclasses must implement the on_mouse method.")
 
-    def shift(self, point):
+
+class HitboxRect(HitboxObject):
+    """Rectangular hitbox."""
+
+    def __init__(
+        self,
+        hitbox: Hitbox,
+        origin: Coord,
+        top_right: Coord,
+        master: Display,
+    ) -> None:
+        """Initialize a rectangular hitbox."""
+        super().__init__(hitbox, origin, master)
+        self.top_right: Coord = top_right
+
+    def shift(self, point: Coord) -> None:
+        """Shift the rectangular hitbox."""
         self.origin = self.origin + point
         self.top_right = self.top_right + point
 
-    def convert(self):
+    def convert(self) -> tuple[Coord, Coord]:
+        """Convert rectangle corners to screen coordinates."""
         return self.master.convert(self.origin), self.master.convert(self.top_right)
 
-    def intersects(self, other):
+    def intersects(self, other: "HitboxObject | Hitbox") -> bool:
+        """Check intersection with another hitbox object or hitbox."""
         if isinstance(other, HitboxRect):
-            return not (self.convert()[1].x < other.convert()[0].x or self.convert()[0].x > other.convert()[1].x or
-                        self.convert()[1].y < other.convert()[0].y or self.convert()[0].y > other.convert()[1].y)
+            return not (
+                self.convert()[1].x < other.convert()[0].x
+                or self.convert()[0].x > other.convert()[1].x
+                or self.convert()[1].y < other.convert()[0].y
+                or self.convert()[0].y > other.convert()[1].y
+            )
         elif isinstance(other, HitboxCircle):
             closest_x = max(self.convert()[0].x, min(other.origin.x, self.convert()[1].x))
             closest_y = max(self.convert()[0].y, min(other.origin.y, self.convert()[1].y))
             distance = utils.distance(Coord(closest_x, closest_y), other.origin)
             return distance < other.radius
         elif isinstance(other, HitboxPoint):
-            return (other.convert().x >= self.convert()[0].x and other.convert().x <= self.convert()[1].x and
-                    other.convert().y >= self.convert()[0].y and other.convert().y <= self.convert()[1].y)
+            return (
+                other.convert().x >= self.convert()[0].x
+                and other.convert().x <= self.convert()[1].x
+                and other.convert().y >= self.convert()[0].y
+                and other.convert().y <= self.convert()[1].y
+            )
         elif isinstance(other, Hitbox):
             for shape in other.shapes:
                 if self.intersects(shape):
@@ -178,18 +320,31 @@ class HitboxRect(HitboxObject):
         else:
             raise NotImplementedError("Intersection not implemented for this shape type.")
 
-class HitboxCircle(HitboxObject):
-    def __init__(self, hitbox, origin, radius, master):
-        super().__init__(hitbox, origin, master)
-        self.radius = radius
 
-    def shift(self, point):
+class HitboxCircle(HitboxObject):
+    """Circular hitbox."""
+
+    def __init__(
+        self,
+        hitbox: Hitbox,
+        origin: Coord,
+        radius: int | float,
+        master: Display,
+    ) -> None:
+        """Initialize a circular hitbox."""
+        super().__init__(hitbox, origin, master)
+        self.radius: float = float(radius)
+
+    def shift(self, point: Coord) -> None:
+        """Shift the circular hitbox."""
         self.origin = self.origin + point
 
-    def convert(self):
+    def convert(self) -> Coord:
+        """Convert circle center to screen coordinates."""
         return self.master.convert(self.origin)
 
-    def intersects(self, other):
+    def intersects(self, other: "HitboxObject | Hitbox") -> bool:
+        """Check intersection with another hitbox object or hitbox."""
         if isinstance(other, HitboxCircle):
             distance = utils.distance(self.convert(), other.convert())
             return distance < (self.radius + other.radius)
@@ -209,25 +364,39 @@ class HitboxCircle(HitboxObject):
         else:
             raise NotImplementedError("Intersection not implemented for this shape type.")
 
+
 class HitboxPoint(HitboxObject):
-    def __init__(self, hitbox, origin, master):
+    """Point hitbox."""
+
+    def __init__(self, hitbox: Hitbox, origin: Coord, master: Display) -> None:
+        """Initialize a point hitbox."""
         super().__init__(hitbox, origin, master)
 
-    def shift(self, point):
+    def shift(self, point: Coord) -> None:
+        """Shift the point hitbox."""
         self.origin = self.origin + point
 
-    def convert(self):
+    def convert(self) -> Coord:
+        """Convert point to screen coordinates."""
         return self.master.convert(self.origin)
 
-    def intersects(self, other):
+    def intersects(self, other: "HitboxObject | Hitbox") -> bool:
+        """Check intersection with another hitbox object or hitbox."""
         if isinstance(other, HitboxCircle):
             distance = utils.distance(self.convert(), other.convert())
             return distance < other.radius
         elif isinstance(other, HitboxRect):
-            return (self.convert().x >= other.convert()[0].x and self.convert().x <= other.convert()[1].x and
-                    self.convert().y >= other.convert()[0].y and self.convert().y <= other.convert()[1].y)
+            return (
+                self.convert().x >= other.convert()[0].x
+                and self.convert().x <= other.convert()[1].x
+                and self.convert().y >= other.convert()[0].y
+                and self.convert().y <= other.convert()[1].y
+            )
         elif isinstance(other, HitboxPoint):
-            return self.convert().x == other.convert().x and self.convert().y == other.convert().y
+            return (
+                self.convert().x == other.convert().x
+                and self.convert().y == other.convert().y
+            )
         elif isinstance(other, Hitbox):
             for shape in other.shapes:
                 if self.intersects(shape):
@@ -236,20 +405,27 @@ class HitboxPoint(HitboxObject):
         else:
             raise NotImplementedError("Intersection not implemented for this shape type.")
 
-class Object:
-    '''A class containing shapes. Its master is either a Display or Screen.'''
-    def __init__(self, master, origin, id, shapes=None, hitbox=None):
-        self.master = master
-        self.origin = origin
-        self.id = id
-        if shapes is None:
-            shapes = []
-        self.shapes = shapes
-        if hitbox is None:
-            hitbox = Hitbox([])
-        self.hitbox = hitbox
 
-    def shift(self, point):
+class Object:
+    """Drawable object composed of shapes, with an optional hitbox."""
+
+    def __init__(
+        self,
+        master: "Display | Screen",
+        origin: Coord,
+        id: str,
+        shapes: Optional[List[Shape]] = None,
+        hitbox: Optional[Hitbox] = None,
+    ) -> None:
+        """Initialize an object with shapes and optional hitbox."""
+        self.master: Display | Screen = master
+        self.origin: Coord = origin
+        self.id: str = id
+        self.shapes: List[Shape] = shapes if shapes is not None else []
+        self.hitbox: Hitbox = hitbox if hitbox is not None else Hitbox([])
+
+    def shift(self, point: Coord) -> None:
+        """Shift the object and its shapes/hitbox."""
         self.origin = self.origin + point
         if self.hitbox:
             self.hitbox.shift(point)
@@ -257,100 +433,64 @@ class Object:
             for shape in self.shapes:
                 shape.shift(point)
 
-    def move(self, point):
+    def move(self, point: Coord) -> None:
+        """Move the object to a new position."""
         self.shift(point - self.origin)
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
+        """Draw all shapes of the object."""
         if self.shapes:
             for shape in self.shapes:
                 shape.draw(self.master, shape.specs)
 
-    def intersects(self, other):
-        '''Checks intersection.'''
+    def intersects(self, other: "Object") -> bool:
+        """Check intersection with another object."""
         if self.hitbox and other.hitbox:
             return self.hitbox.intersects(other.hitbox)
         return False
 
-    def convert(self, point):
-        '''Converts a point from the object's local coordinates to the master's coordinates.'''
+    def convert(self, point: Coord) -> Coord:
+        """Convert a local point to master's coordinates."""
         return point + self.origin
 
-class MultInterp:
-    def __init__(self, tweens):
-        self.tweens = tweens
-        self.index = 0
-
-    def active(self):
-        return self.index < len(self.tweens)
-
-    def finished(self):
-        return self.index >= len(self.tweens)
-
-    def interpolate(self):
-        if not self.active():
-            return self.tweens[-1].point2  # Return the last point if all tweens are finished
-
-        current = self.tweens[self.index]
-        value = current.interpolate()
-        print(f"Current tween index: {self.index}, Value: ({value.x}, {value.y})")  # Debugging line
-
-        # If the current tween finished, move to the next one
-        if current.finished():
-            self.index += 1
-
-        return value
-
-class Looper(MultInterp):
-    def __init__(self, tweens):
-        self.tweens = tweens
-        self.index = 0
-        self.start_time = time.time()
-
-    def interpolate(self):
-        if not self.active():
-            for tween in self.tweens:
-                if isinstance(tween, MultInterp):
-                    for stween in tween.tweens:
-                        stween.start += time.time() - self.start_time  # Reset start time for each tween
-                        tween.index = 0
-                else:
-                    tween.start += time.time() - self.start_time  # Reset start time for each tween
-                    self.start_time = time.time()
-            self.index = 0
-
-        current = self.tweens[self.index]
-        value = current.interpolate()
-        print(f"Current tween index: {self.index}, Value: ({value.x}, {value.y})")  # Debugging line
-
-        # If the current tween finished, move to the next one
-        if current.finished():
-            self.index += 1
-
-        return value
 
 class Interpolation:
-    '''A class for interpolation between two points.'''
-    def __init__(self, start, duration, point1, point2):
-        self.start = start
-        self.duration = duration
-        self.point1 = point1
-        self.point2 = point2
+    """Base class for interpolation between two points."""
 
-    def finished(self):
+    def __init__(
+        self,
+        start: float,
+        duration: float,
+        point1: Coord,
+        point2: Coord,
+    ) -> None:
+        """Initialize interpolation."""
+        self.start: float = start
+        self.duration: float = duration
+        self.point1: Coord = point1
+        self.point2: Coord = point2
+
+    def finished(self) -> bool:
+        """Return True if interpolation has finished."""
         current_time = time.time()
         return current_time > self.start + self.duration
 
-    def active(self):
+    def active(self) -> bool:
+        """Return True if interpolation is currently active."""
         current_time = time.time()
-        return (self.start <= current_time) and (current_time <= self.start + self.duration)
+        return self.start <= current_time <= self.start + self.duration
 
-    def interpolate(self):
+    def interpolate(self) -> Coord:
+        """Return interpolated coordinate."""
         raise NotImplementedError("Subclasses must implement the interpolate method.")
 
+
 class LinTerp(Interpolation):
-    '''A class for linear interpolation between two points.'''
-    def interpolate(self):
+    """Linear interpolation between two points."""
+
+    def interpolate(self) -> Coord:
+        """Return linearly interpolated coordinate."""
         current_time = time.time()
         if current_time < self.start:
             return self.point1
@@ -361,10 +501,13 @@ class LinTerp(Interpolation):
             x = (1 - t) * self.point1.x + t * self.point2.x
             y = (1 - t) * self.point1.y + t * self.point2.y
             return Coord(x, y)
+
 
 class SmoothStep(Interpolation):
-    '''A class for smooth step interpolation between two points.'''
-    def interpolate(self):
+    """Smoothstep interpolation between two points."""
+
+    def interpolate(self) -> Coord:
+        """Return smoothstep interpolated coordinate."""
         current_time = time.time()
         if current_time < self.start:
             return self.point1
@@ -372,14 +515,17 @@ class SmoothStep(Interpolation):
             return self.point2
         else:
             t = (current_time - self.start) / self.duration
-            t = t * t * (3 - 2 * t)  # Smoothstep function
+            t = t * t * (3 - 2 * t)
             x = (1 - t) * self.point1.x + t * self.point2.x
             y = (1 - t) * self.point1.y + t * self.point2.y
             return Coord(x, y)
+
 
 class SmootherStep(Interpolation):
-    '''A class for smoother step interpolation between two points.'''
-    def interpolate(self):
+    """Smootherstep interpolation between two points."""
+
+    def interpolate(self) -> Coord:
+        """Return smootherstep interpolated coordinate."""
         current_time = time.time()
         if current_time < self.start:
             return self.point1
@@ -387,18 +533,29 @@ class SmootherStep(Interpolation):
             return self.point2
         else:
             t = (current_time - self.start) / self.duration
-            t = t * t * t * (t * (6 * t - 15) + 10)  # Smootherstep function
+            t = t * t * t * (t * (6 * t - 15) + 10)
             x = (1 - t) * self.point1.x + t * self.point2.x
             y = (1 - t) * self.point1.y + t * self.point2.y
             return Coord(x, y)
 
+
 class TanhTween(Interpolation):
-    '''A class for smoother step interpolation between two points.'''
-    def __init__(self, start, duration, point1, point2, sharpness=3):
+    """Tanh-based easing interpolation between two points."""
+
+    def __init__(
+        self,
+        start: float,
+        duration: float,
+        point1: Coord,
+        point2: Coord,
+        sharpness: float = 3.0,
+    ) -> None:
+        """Initialize tanh tween."""
         super().__init__(start, duration, point1, point2)
-        self.sharpness = sharpness
-    
-    def interpolate(self):
+        self.sharpness: float = sharpness
+
+    def interpolate(self) -> Coord:
+        """Return tanh-eased interpolated coordinate."""
         current_time = time.time()
         if current_time < self.start:
             return self.point1
@@ -411,41 +568,131 @@ class TanhTween(Interpolation):
             y = (1 - t) * self.point1.y + t * self.point2.y
             return Coord(x, y)
 
+
+class MultInterp:
+    """Sequence of interpolations executed in order."""
+
+    def __init__(self, tweens: Sequence[Interpolation]) -> None:
+        """Initialize a multi-interpolation chain."""
+        self.tweens: Sequence[Interpolation] = tweens
+        self.index: int = 0
+
+    def active(self) -> bool:
+        """Return True if there are remaining active tweens."""
+        return self.index < len(self.tweens)
+
+    def finished(self) -> bool:
+        """Return True if all tweens have finished."""
+        return self.index >= len(self.tweens)
+
+    def interpolate(self) -> Coord:
+        """Return current interpolated coordinate from active tween."""
+        if not self.active():
+            return self.tweens[-1].point2
+
+        current = self.tweens[self.index]
+        value = current.interpolate()
+
+        if current.finished():
+            self.index += 1
+
+        return value
+
+
+class Looper(MultInterp):
+    """Looping sequence of interpolations."""
+
+    def __init__(self, tweens: Sequence[Interpolation | MultInterp]) -> None:
+        """Initialize a looping interpolation chain."""
+        self.tweens: Sequence[Interpolation | MultInterp] = tweens
+        self.index: int = 0
+        self.start_time: float = time.time()
+
+    def interpolate(self) -> Coord:
+        """Return current interpolated coordinate, looping when finished."""
+        if not self.active():
+            delta = time.time() - self.start_time
+            for tween in self.tweens:
+                if isinstance(tween, MultInterp):
+                    tween.index = 0
+                    for stween in tween.tweens:
+                        stween.start += delta
+                else:
+                    tween.start += delta
+            self.start_time = time.time()
+            self.index = 0
+
+        current = self.tweens[self.index]
+        value = current.interpolate()
+
+        if current.finished():
+            self.index += 1
+
+        return value
+
+
 class VizWiz:
-    def __init__(self, width=800, height=600, title="VizWiz Visualization"):
+    """Visualization wrapper around turtle for drawing displays."""
+
+    def __init__(
+        self,
+        width: int = 800,
+        height: int = 600,
+        title: str = "VizWiz Visualization",
+    ) -> None:
+        """Initialize VizWiz with a turtle screen."""
         self.screen = turtle.Screen()
         self.screen.tracer(0)
         self.screen.setup(width, height)
         self.screen.title(title)
         self.screen.bgcolor("white")
-        self.turtle = turtle.Turtle()
+
+        self.turtle: turtle.Turtle = turtle.Turtle()
         self.turtle.hideturtle()
         self.turtle.speed(0)
         self.turtle.penup()
-        self.displays = {}
-        self.screen.onscreenclick(on_move, btn=0)
+
+        self.displays: Dict[str, Display | Screen] = {}
+
+        def on_move(event):
+            global mouse_pos
+            # Convert TK coordinates to turtle coordinates
+            x = event.x - self.screen.window_width() / 2
+            y = self.screen.window_height() / 2 - event.y
+            mouse_pos = (x, y)
+        self.screen.getcanvas().bind("<Motion>", on_move)
         self.screen.onscreenclick(on_left_click, btn=1)
         self.screen.onscreenclick(on_right_click, btn=3)
         self.screen.onscreenclick(on_middle_click, btn=2)
         self.turtle.onrelease(on_release)
 
-    def add_display(self, obj):
-        if isinstance(obj, Display) or isinstance(obj, Screen):
-            self.displays[obj.id] = obj
+    def add_display(self, obj: "Display | Screen") -> None:
+        """Add a display or screen to the visualization."""
         self.displays[obj.id] = obj
 
-    def remove_display(self, id):
+    def remove_display(self, id: str) -> None:
+        """Remove a display by id."""
         if id in self.displays:
             del self.displays[id]
 
-    def draw_frame(self):
+    def draw_frame(self) -> None:
+        """Draw a single frame for all displays."""
         self.turtle.clear()
         for display in self.displays.values():
             display.update_tweens()
             display.draw()
         self.screen.update()
 
-    def create_rectangle(self, origin, top_right, fill=True, color="black", fill_color="black", width=1):
+    def create_rectangle(
+        self,
+        origin: Coord,
+        top_right: Coord,
+        fill: bool = True,
+        color: str = "black",
+        fill_color: str = "black",
+        width: int = 1,
+    ) -> None:
+        """Draw a rectangle using turtle."""
         self.turtle.color(color)
         self.turtle.width(width)
         if fill:
@@ -461,7 +708,16 @@ class VizWiz:
         if fill:
             self.turtle.end_fill()
 
-    def create_circle(self, origin, radius, fill=True, color="black", fill_color="black", width=1):
+    def create_circle(
+        self,
+        origin: Coord,
+        radius: float,
+        fill: bool = True,
+        color: str = "black",
+        fill_color: str = "black",
+        width: int = 1,
+    ) -> None:
+        """Draw a circle using turtle."""
         self.turtle.color(color)
         self.turtle.width(width)
         if fill:
@@ -474,7 +730,14 @@ class VizWiz:
         if fill:
             self.turtle.end_fill()
 
-    def create_line(self, origin, end, color="black", width=1):
+    def create_line(
+        self,
+        origin: Coord,
+        end: Coord,
+        color: str = "black",
+        width: int = 1,
+    ) -> None:
+        """Draw a line using turtle."""
         self.turtle.color(color)
         self.turtle.width(width)
         self.turtle.goto(origin.x, origin.y)
@@ -482,117 +745,216 @@ class VizWiz:
         self.turtle.goto(end.x, end.y)
         self.turtle.penup()
 
-    def create_text(self, origin, text, color="black", font=("Arial", 12, "normal")):
+    def create_text(
+        self,
+        origin: Coord,
+        text: str,
+        color: str = "black",
+        font: tuple[str, int, str] = ("Arial", 12, "normal"),
+    ) -> None:
+        """Draw text using turtle."""
         self.turtle.color(color)
         self.turtle.goto(origin.x, origin.y)
         self.turtle.write(text, font=font)
 
-class Display:
-    '''Fixed screen for drawing.'''
-    def __init__(self, master, origin, top_right, id, objects = None, scale = 20):
-        if objects is None:
-            objects = {}
-        self.master = master
-        self.origin = origin
-        self.top_right = top_right
-        self.id = id
-        self.objects = objects
-        self.scale = scale
-        self.tweens = {}
 
-    def add_tween(self, id, tween):
+class Display:
+    """Fixed display for drawing objects."""
+
+    def __init__(
+        self,
+        master: VizWiz,
+        origin: Coord,
+        top_right: Coord,
+        id: str,
+        objects: Optional[Dict[str, Object]] = None,
+        scale: int = 20,
+    ) -> None:
+        """Initialize a display."""
+        self.master: VizWiz = master
+        self.origin: Coord = origin
+        self.top_right: Coord = top_right
+        self.id: str = id
+        self.objects: Dict[str, Object] = objects if objects is not None else {}
+        self.scale: int = scale
+        self.tweens: Dict[str, MultInterp | Looper | Interpolation] = {}
+
+    def add_tween(self, id: str, tween: MultInterp | Looper | Interpolation) -> None:
+        """Add a tween for an object by id."""
         self.tweens[id] = tween
 
-    def remove_tween(self, id):
+    def remove_tween(self, id: str) -> None:
+        """Remove a tween by id."""
         if id in self.tweens:
             del self.tweens[id]
 
-    def update_tweens(self):
+    def update_tweens(self) -> None:
+        """Update all tweens and move their objects."""
         for id, tween in self.tweens.items():
             new_position = tween.interpolate()
             self.objects[id].move(new_position)
 
-    def draw(self):
+    def draw(self) -> None:
+        """Draw all objects in the display."""
         for obj in self.objects.values():
             obj.draw()
 
-    def create_rectangle(self, origin, top_right, specs=None):
+    def create_rectangle(
+        self,
+        origin: Coord,
+        top_right: Coord,
+        specs: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Create a rectangle in display coordinates."""
         if specs is None:
             specs = {}
-        self.master.create_rectangle(origin * self.scale + self.origin, top_right * self.scale + self.origin, **specs)
+        self.master.create_rectangle(
+            origin * self.scale + self.origin,
+            top_right * self.scale + self.origin,
+            **specs,
+        )
 
-    def create_circle(self, origin, radius, specs=None):
+    def create_circle(
+        self,
+        origin: Coord,
+        radius: float,
+        specs: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Create a circle in display coordinates."""
         if specs is None:
             specs = {}
-        self.master.create_circle(origin * self.scale + self.origin, radius * self.scale, **specs)
+        self.master.create_circle(
+            origin * self.scale + self.origin,
+            radius * self.scale,
+            **specs,
+        )
 
-    def create_line(self, origin, end, specs=None):
+    def create_line(
+        self,
+        origin: Coord,
+        end: Coord,
+        specs: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Create a line in display coordinates."""
         if specs is None:
             specs = {}
-        self.master.create_line(origin * self.scale + self.origin, end * self.scale + self.origin, **specs)
+        self.master.create_line(
+            origin * self.scale + self.origin,
+            end * self.scale + self.origin,
+            **specs,
+        )
 
-    def create_text(self, origin, text, specs=None):
+    def create_text(
+        self,
+        origin: Coord,
+        text: str,
+        specs: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Create text in display coordinates."""
         if specs is None:
             specs = {}
         self.master.create_text(origin * self.scale + self.origin, text, **specs)
 
-class Screen(Display):
-    '''A screen that can be panned and zoomed.'''
-    def __init__(self, master, origin, top_right, id, objects = None, scale = 20):
-        super().__init__(master, origin, top_right, id, objects, scale)
-        self.pan_offset = Coord(0, 0)
-        self.zoom_factor = 1.0
+    def get_mouse_as_coord(self):
+        """Gets the mouse as a coordinate."""
+        global mouse_pos
+        new_x = (mouse_pos[0] - self.origin.x) / self.scale
+        new_y = (mouse_pos[1] - self.origin.y) / self.scale
+        return Coord(new_x, new_y)
 
-    def pan(self, offset):
+    def get_mouse_as_hitbox(self):
+        """Gets the mouse as a hitbox."""
+        coord = self.get_mouse_as_coord()
+        hitbox = Hitbox([])
+        hitbox.shapes.append(HitboxPoint(hitbox, coord, self))
+        return hitbox
+
+    def convert(self, point:Coord) -> Coord:
+        """Convert a local point to screen coordinates."""
+        return (point + self.origin) * self.scale
+
+
+class Screen(Display):
+    """Display that supports panning and zooming."""
+
+    def __init__(
+        self,
+        master: VizWiz,
+        origin: Coord,
+        top_right: Coord,
+        id: str,
+        objects: Optional[Dict[str, Object]] = None,
+        scale: int = 20,
+    ) -> None:
+        """Initialize a screen."""
+        super().__init__(master, origin, top_right, id, objects, scale)
+        self.pan_offset: Coord = Coord(0, 0)
+        self.zoom_factor: float = 1.0
+
+    def pan(self, offset: Coord) -> None:
+        """Pan the screen by a given offset."""
         self.pan_offset += offset
 
-    def zoom(self, factor):
+    def zoom(self, factor: float) -> None:
+        """Zoom the screen by a given factor."""
         self.zoom_factor *= factor
 
-    def convert(self, point):
+    def convert(self, point: Coord) -> Coord:
+        """Convert a local point to screen coordinates."""
         return (point * self.scale * self.zoom_factor) + self.origin + self.pan_offset
 
-class Engine:
-    def __init__(self):
-        self.viz = VizWiz()
-        self.displays = {}
 
-    def add_display(self, id, display):
+class Engine:
+    """Engine that manages VizWiz and displays."""
+
+    def __init__(self) -> None:
+        """Initialize the engine."""
+        self.viz: VizWiz = VizWiz()
+        self.displays: Dict[str, Display | Screen] = {}
+
+    def add_display(self, id: str, display: Display | Screen) -> None:
+        """Add a display to the engine."""
         self.displays[id] = display
 
-    def draw_frame(self):
+    def draw_frame(self) -> None:
+        """Draw a frame for all displays."""
         self.viz.turtle.clear()
         for display in self.displays.values():
             display.update_tweens()
             display.draw()
         self.viz.screen.update()
 
-mouse_pos = None
-left_click_down = False
-right_click_down = False
-middle_click_down = False
-mouse_down = False
 
-def on_move(x, y):
-    global mouse_pos
-    mouse_pos = (x, y)
+mouse_pos: tuple[float, float] = (utils.loop, utils.loop)
+left_click_down: bool = False
+right_click_down: bool = False
+middle_click_down: bool = False
+mouse_down: bool = False
 
-def on_left_click(x, y):
+
+def on_left_click(x: float, y: float) -> None:
+    """Handle left mouse button down."""
     global left_click_down, mouse_down
     left_click_down = True
     mouse_down = True
 
-def on_right_click(x, y):
+
+def on_right_click(x: float, y: float) -> None:
+    """Handle right mouse button down."""
     global right_click_down, mouse_down
     right_click_down = True
     mouse_down = True
 
-def on_middle_click(x, y):
+
+def on_middle_click(x: float, y: float) -> None:
+    """Handle middle mouse button down."""
     global middle_click_down, mouse_down
     middle_click_down = True
     mouse_down = True
 
-def on_release(x, y):
+
+def on_release(x: float, y: float) -> None:
+    """Handle mouse button release."""
     global left_click_down, right_click_down, middle_click_down, mouse_down
     left_click_down = False
     right_click_down = False
