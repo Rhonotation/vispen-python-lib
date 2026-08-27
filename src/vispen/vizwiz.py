@@ -333,6 +333,7 @@ class VizWiz:
         self.turtle.speed(0)
         self.turtle.penup()
         self.displays = {}
+        self.screen.tracer(0)
 
     def add_display(self, obj):
         if isinstance(obj, Display) or isinstance(obj, Screen):
