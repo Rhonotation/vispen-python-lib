@@ -1,5 +1,5 @@
 """
-Vispen v1.1
+Vispen v1.1.2
 Features: Mouse functionality
 """
 from __future__ import annotations
@@ -221,6 +221,10 @@ class Hitbox:
         """Initialize a hitbox with a list of hitbox shapes."""
         self.shapes: List[HitboxObject] = shapes
 
+    def add_hitboxobject(self, shape:HitboxObject) -> None:
+        """Adds an object to the hitbox."""
+        self.shapes.append(shape)
+
     def shift(self, point: Coord) -> None:
         """Shift all shapes in the hitbox."""
         for shape in self.shapes:
@@ -241,6 +245,13 @@ class Hitbox:
             return False
         else:
             raise NotImplementedError("Intersection not implemented for this shape type.")
+
+    def on_mouse(self) -> bool:
+        """Check intersection with mouse."""
+        for shape in self.shapes:
+            if shape.intersects(shape.master.get_mouse_as_hitbox()):
+                return True
+        return False
 
 
 class HitboxObject:
@@ -455,6 +466,18 @@ class Object:
         """Convert a local point to master's coordinates."""
         return point + self.origin
 
+    def add_shape(self, shape:Shape) -> None:
+        """Adds a shape to self."""
+        self.shapes.append(shape)
+
+    def add_hitboxobject(self, hitbox:HitboxObject) -> None:
+        """Adds a hitbox object to the hitbox."""
+        self.hitbox.add_hitboxobject(hitbox)
+
+    def set_hitbox(self, hitbox:Hitbox) -> None:
+        """Sets the hitbox of self."""
+        self.hitbox = hitbox
+
 
 class Interpolation:
     """Base class for interpolation between two points."""
@@ -647,6 +670,7 @@ class VizWiz:
         self.screen.setup(width, height)
         self.screen.title(title)
         self.screen.bgcolor("white")
+        self.mouse = Mouse()
 
         self.turtle: turtle.Turtle = turtle.Turtle()
         self.turtle.hideturtle()
@@ -656,16 +680,19 @@ class VizWiz:
         self.displays: Dict[str, Display | Screen] = {}
 
         def on_move(event):
-            global mouse_pos
             # Convert TK coordinates to turtle coordinates
             x = event.x - self.screen.window_width() / 2
             y = self.screen.window_height() / 2 - event.y
-            mouse_pos = (x, y)
-        self.screen.getcanvas().bind("<Motion>", on_move)
-        self.screen.onscreenclick(on_left_click, btn=1)
-        self.screen.onscreenclick(on_right_click, btn=3)
-        self.screen.onscreenclick(on_middle_click, btn=2)
-        self.turtle.onrelease(on_release)
+            self.mouse.mouse_pos = [x, y]
+
+        canvas = self.screen.getcanvas()
+        canvas.bind("<Motion>", lambda e: on_move(e))
+        canvas.bind("<Button-1>", lambda e: self.mouse.on_left_click(e.x, e.y))
+        canvas.bind("<Button-2>", lambda e: self.mouse.on_middle_click(e.x, e.y))
+        canvas.bind("<Button-3>", lambda e: self.mouse.on_right_click(e.x, e.y))
+        canvas.bind("<ButtonRelease-1>", lambda e: self.mouse.on_release(e.x, e.y))
+        canvas.bind("<ButtonRelease-2>", lambda e: self.mouse.on_release(e.x, e.y))
+        canvas.bind("<ButtonRelease-3>", lambda e: self.mouse.on_release(e.x, e.y))
 
     def add_display(self, obj: "Display | Screen") -> None:
         """Add a display or screen to the visualization."""
@@ -678,7 +705,6 @@ class VizWiz:
 
     def draw_frame(self) -> None:
         """Draw a single frame for all displays."""
-        self.turtle.clear()
         for display in self.displays.values():
             display.update_tweens()
             display.draw()
@@ -795,6 +821,15 @@ class Display:
             new_position = tween.interpolate()
             self.objects[id].move(new_position)
 
+    def add_object(self, id: str, object: Object) -> None:
+        """Add an object by id."""
+        self.objects[id] = object
+
+    def remove_object(self, id: str) -> None:
+        """Remove an object by id."""
+        if id in self.objects:
+            del self.objects[id]
+
     def draw(self) -> None:
         """Draw all objects in the display."""
         for obj in self.objects.values():
@@ -859,8 +894,8 @@ class Display:
     def get_mouse_as_coord(self):
         """Gets the mouse as a coordinate."""
         global mouse_pos
-        new_x = (mouse_pos[0] - self.origin.x) / self.scale
-        new_y = (mouse_pos[1] - self.origin.y) / self.scale
+        new_x = (self.master.mouse.mouse_pos[0] - self.origin.x) / self.scale
+        new_y = (self.master.mouse.mouse_pos[1] - self.origin.y) / self.scale
         return Coord(new_x, new_y)
 
     def get_mouse_as_hitbox(self):
@@ -925,39 +960,35 @@ class Engine:
             display.draw()
         self.viz.screen.update()
 
+class Mouse:
+    """Class for a mouse."""
+    def __init__(self) -> None:
+        """Initializes the mouse."""
+        self.mouse_pos: list[float] = [0.0, 0.0]
+        self.left_click_down: bool = False
+        self.right_click_down: bool = False
+        self.middle_click_down: bool = False
+        self.mouse_down: bool = False
 
-mouse_pos: tuple[float, float] = (utils.loop, utils.loop)
-left_click_down: bool = False
-right_click_down: bool = False
-middle_click_down: bool = False
-mouse_down: bool = False
+    def on_left_click(self, x: float, y: float) -> None:
+        """Handle left mouse button down."""
+        self.left_click_down = True
+        self.mouse_down = True
 
-
-def on_left_click(x: float, y: float) -> None:
-    """Handle left mouse button down."""
-    global left_click_down, mouse_down
-    left_click_down = True
-    mouse_down = True
-
-
-def on_right_click(x: float, y: float) -> None:
-    """Handle right mouse button down."""
-    global right_click_down, mouse_down
-    right_click_down = True
-    mouse_down = True
-
-
-def on_middle_click(x: float, y: float) -> None:
-    """Handle middle mouse button down."""
-    global middle_click_down, mouse_down
-    middle_click_down = True
-    mouse_down = True
+    def on_right_click(self, x: float, y: float) -> None:
+        """Handle right mouse button down."""
+        self.right_click_down = True
+        self.mouse_down = True
 
 
-def on_release(x: float, y: float) -> None:
-    """Handle mouse button release."""
-    global left_click_down, right_click_down, middle_click_down, mouse_down
-    left_click_down = False
-    right_click_down = False
-    middle_click_down = False
-    mouse_down = False
+    def on_middle_click(self, x: float, y: float) -> None:
+        """Handle middle mouse button down."""
+        self.middle_click_down = True
+        self.mouse_down = True
+
+    def on_release(self, x: float, y: float) -> None:
+        """Handle mouse button release."""
+        self.left_click_down = False
+        self.right_click_down = False
+        self.middle_click_down = False
+        self.mouse_down = False
