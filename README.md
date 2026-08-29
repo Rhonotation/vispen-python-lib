@@ -80,21 +80,25 @@ There are currently 4 subclasses:
 - Text: Text shape.
   Additional attributes:
   - Text.text: string to display.
+
   Modified methods:
   - def __init__(self, origin: Coord, text: str, specs: Optional[Dict[str, Any]] = None) -> None: Initialize the text at origin.
 - Segment: Line segment shape.
   Additional attributes:
   - Segment.end: end of the segment.
+
   Modified methods:
   - def __init__(self, origin: Coord, end: Coord, specs: Optional[Dict[str, Any]] = None) -> None: Initialize a segment from origin to end.
 - Rect: Rectangle shape.
   Additional attributes:
   - Rect.top_right: top-right corner of the rectangle.
+
   Modified methods:
   - def __init__(self, origin: Coord, top_right: Coord, specs: Optional[Dict[str, Any]] = None) -> None: Initialize the rectangle from origin to top_right.
 - Circle: Circle shape.
   Additional attributes:
   - Circle.radius: radius of the circle.
+
   Modified methods:
   - def __init__(self, origin: Coord, radius: int | float, specs: Optional[Dict[str, Any]] = None) -> None: Initialize circle at origin with radius.
 
