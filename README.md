@@ -58,6 +58,7 @@ Class for coordinates that behave like complex numbers.
 Attributes:
 - Coord.x: The x-coordinate of the object.
 - Coord.y: The y-coordinate of the object.
+
 Methods:
 - def __init__(self, x: int | float, y: int | float) -> None: Initialize a coordinate at (x, y).
 - def __add__(self, other: Coord) -> Coord: Add two coordinates.
@@ -71,11 +72,13 @@ Shape is a base class that is used in inheritance for the shape subclasses.
 Attributes:
 - Shape.origin: the relative origin of the shape.
 - Shape.specs: the specifications or characteristics of the shape.
+
 Methods:
 - def __init__(self, origin: Coord, specs: Optional[Dict[str, Any]] = None) -> None: Initialize the shape.
 - def modify_specs(self, new_specs: Dict[str, Any]) -> None: Update the shape's drawing specifications.
 - def shift(self, point: Coord) -> None: Shift the shape by a coordinate acting as a vector.
 - def draw(self, master: Display | Screen, specs: dict | None = None) -> None: Draw the shape using the given master.
+
 There are currently 4 subclasses:
 - Text: Text shape.
   Additional attributes:
@@ -103,8 +106,12 @@ There are currently 4 subclasses:
   - def __init__(self, origin: Coord, radius: int | float, specs: Optional[Dict[str, Any]] = None) -> None: Initialize circle at origin with radius.
 
 ### 5.4 vizwiz.Hitbox
-- Class descriptions
-- Method list
+Class for object hitboxes.
+Attributes:
+- Hitbox.shapes: hitbox objects of the hitbox.
+
+Methods:
+---
 
 ### 5.5 vizwiz.HitboxObject
 - Class descriptions
