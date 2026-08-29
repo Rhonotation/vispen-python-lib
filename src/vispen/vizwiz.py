@@ -113,12 +113,7 @@ class Shape:
 class Text(Shape):
     """Text shape."""
 
-    def __init__(
-        self,
-        origin: Coord,
-        text: str,
-        specs: Optional[Dict[str, Any]] = None,
-    ) -> None:
+    def __init__(self, origin: Coord, text: str, specs: Optional[Dict[str, Any]] = None) -> None:
         """
         Initialize text.
 
@@ -143,12 +138,7 @@ class Text(Shape):
 class Segment(Shape):
     """Line segment shape."""
 
-    def __init__(
-        self,
-        origin: Coord,
-        end: Coord,
-        specs: Optional[Dict[str, Any]] = None,
-    ) -> None:
+    def __init__(self, origin: Coord, end: Coord, specs: Optional[Dict[str, Any]] = None) -> None:
         """Initialize a segment from origin to end."""
         super().__init__(origin, specs)
         self.end: Coord = end
@@ -168,12 +158,7 @@ class Segment(Shape):
 class Rect(Shape):
     """Rectangle shape."""
 
-    def __init__(
-        self,
-        origin: Coord,
-        top_right: Coord,
-        specs: Optional[Dict[str, Any]] = None,
-    ) -> None:
+    def __init__(self, origin: Coord, top_right: Coord, specs: Optional[Dict[str, Any]] = None) -> None:
         """Initialize a rectangle from origin to top_right."""
         super().__init__(origin, specs)
         self.top_right: Coord = top_right
@@ -193,12 +178,7 @@ class Rect(Shape):
 class Circle(Shape):
     """Circle shape."""
 
-    def __init__(
-        self,
-        origin: Coord,
-        radius: int | float,
-        specs: Optional[Dict[str, Any]] = None,
-    ) -> None:
+    def __init__(self, origin: Coord, radius: int | float, specs: Optional[Dict[str, Any]] = None) -> None:
         """Initialize a circle at origin with given radius."""
         super().__init__(origin, specs)
         self.radius: float = float(radius)
@@ -938,6 +918,13 @@ class Screen(Display):
     def convert(self, point: Coord) -> Coord:
         """Convert a local point to screen coordinates."""
         return (point * self.scale * self.zoom_factor) + self.origin + self.pan_offset
+
+    def get_mouse_as_coord(self):
+        """Gets the mouse as a coordinate."""
+        global mouse_pos
+        new_x = (self.master.mouse.mouse_pos[0] - self.origin.x - self.pan_offset.x) / self.scale / self.zoom_factor
+        new_y = (self.master.mouse.mouse_pos[1] - self.origin.y - self.pan_offset.y) / self.scale / self.zoom_factor
+        return Coord(new_x, new_y)
 
 
 class Engine:
