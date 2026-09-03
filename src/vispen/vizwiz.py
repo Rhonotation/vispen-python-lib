@@ -237,9 +237,9 @@ class Hitbox:
 class HitboxObject:
     """Base class for hitbox shapes."""
 
-    def __init__(self, hitbox: Hitbox, origin: Coord, master: Display) -> None:
+    def __init__(self, hitbox: Optional[Hitbox], origin: Coord, master: Display) -> None:
         """Initialize a hitbox object."""
-        self.hitbox: Hitbox = hitbox
+        self.hitbox: Optional[Hitbox] = hitbox
         self.origin: Coord = origin
         self.master: Display = master
 
@@ -263,13 +263,7 @@ class HitboxObject:
 class HitboxRect(HitboxObject):
     """Rectangular hitbox."""
 
-    def __init__(
-        self,
-        hitbox: Hitbox,
-        origin: Coord,
-        top_right: Coord,
-        master: Display,
-    ) -> None:
+    def __init__(self, hitbox: Optional[Hitbox], origin: Coord, top_right: Coord, master: Display) -> None:
         """Initialize a rectangular hitbox."""
         super().__init__(hitbox, origin, master)
         self.top_right: Coord = top_right
@@ -318,7 +312,7 @@ class HitboxCircle(HitboxObject):
 
     def __init__(
         self,
-        hitbox: Hitbox,
+        hitbox: Optional[Hitbox],
         origin: Coord,
         radius: int | float,
         master: Display,
@@ -360,7 +354,7 @@ class HitboxCircle(HitboxObject):
 class HitboxPoint(HitboxObject):
     """Point hitbox."""
 
-    def __init__(self, hitbox: Hitbox, origin: Coord, master: Display) -> None:
+    def __init__(self, hitbox: Optional[Hitbox], origin: Coord, master: Display) -> None:
         """Initialize a point hitbox."""
         super().__init__(hitbox, origin, master)
 

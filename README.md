@@ -1,9 +1,7 @@
 # Vispen Documentation Outline
 
 ## 1. Overview
-- What Vispen is
-- What problems it solves
-- High‑level description of the engine
+Vispen is a "game" engine for making basic games. It's easy to learn and use.
 
 ## 2. Installation
 - Requirements
@@ -19,10 +17,17 @@
 
 ## 4. Core Concepts
 - VizWiz
+VizWiz is the main container that is for rendering everything.
+- Engine
+Engine contains the VizWiz and acts like a root.
 - Display
+Displays are things that the VizWiz contains, and they contain Objects.
 - Object
+Objects are collections of shapes and/or hitboxes contained by a Display.
 - Coord
+Coords are coordinates that act like complex numbers. They are relative to whatever they're in, whether it be a shape or an object.
 - Utils
+utils.py contains some helpful functions that are used by some of the vizwiz.py classes. One important constant is utils.loop, which represents 10<sup>8</sup>. Using a 1:1s conversion rate, it would last ~3.17 years. It can be used in subclasses of Interpolation for looping movement.
 
 ## 5. API Reference
 ### 5.1 vizwiz.py
@@ -52,70 +57,74 @@ Classes:
 - Engine
 - Mouse
 
-
 ### 5.2 vizwiz.Coord
 Class for coordinates that behave like complex numbers.
 Attributes:
-- Coord.x: The x-coordinate of the object.
-- Coord.y: The y-coordinate of the object.
+- `Coord.x`: The x-coordinate of the object.
+- `Coord.y`: The y-coordinate of the object.
 
 Methods:
-- def __init__(self, x: int | float, y: int | float) -> None: Initialize a coordinate at (x, y).
-- def __add__(self, other: Coord) -> Coord: Add two coordinates.
-- def __iadd__(self, other: Coord) -> Coord: Add a coordinate to self in-place.
-- def __sub__(self, other: Coord) -> Coord: Subtract one coordinate from another.
-- def __mul__(self, other: Coord | int | float) -> Coord: Multiply two coordinates, or a coordinate by a scalar.
-- def __truediv__(self, other: Coord | int | float) -> Coord: Divide one coordinate by another or by a scalar.
+- `def __init__(self, x: int | float, y: int | float) -> None:` Initialize a coordinate at (x, y).
+- `def __add__(self, other: Coord) -> Coord:` Add two coordinates.
+- `def __iadd__(self, other: Coord) -> Coord:` Add a coordinate to self in-place.
+- `def __sub__(self, other: Coord) -> Coord:` Subtract one coordinate from another.
+- `def __mul__(self, other: Coord | int | float) -> Coord:` Multiply two coordinates, or a coordinate by a scalar.
+- `def __truediv__(self, other: Coord | int | float) -> Coord:` Divide one coordinate by another or by a scalar.
 
 ### 5.3 vizwiz.Shape
-Shape is a base class that is used in inheritance for the shape subclasses.
+`Shape` is a base class that is used in inheritance for the shape subclasses.
 Attributes:
-- Shape.origin: the relative origin of the shape.
-- Shape.specs: the specifications or characteristics of the shape.
+- `Shape.origin`: the relative origin of the shape.
+- `Shape.specs`: the specifications or characteristics of the shape.
 
 Methods:
-- def __init__(self, origin: Coord, specs: Optional[Dict[str, Any]] = None) -> None: Initialize the shape.
-- def modify_specs(self, new_specs: Dict[str, Any]) -> None: Update the shape's drawing specifications.
-- def shift(self, point: Coord) -> None: Shift the shape by a coordinate acting as a vector.
-- def draw(self, master: Display | Screen, specs: dict | None = None) -> None: Draw the shape using the given master.
+- `def __init__(self, origin: Coord, specs: Optional[Dict[str, Any]] = None) -> None:` Initialize the shape.
+- `def modify_specs(self, new_specs: Dict[str, Any]) -> None:` Update the shape's drawing specifications.
+- `def shift(self, point: Coord) -> None:` Shift the shape by a coordinate acting as a vector.
+- `def draw(self, master: Display | Screen, specs: dict | None = None) -> None:` Draw the shape using the given master.
 
 There are currently 4 subclasses:
-- Text: Text shape.
+- `Text`: Text shape.
   Additional attributes:
-  - Text.text: string to display.
+  - `Text.text`: string to display.
 
   Modified methods:
-  - def __init__(self, origin: Coord, text: str, specs: Optional[Dict[str, Any]] = None) -> None: Initialize the text at origin.
-- Segment: Line segment shape.
+  - `def __init__(self, origin: Coord, text: str, specs: Optional[Dict[str, Any]] = None) -> None:` Initialize the text at origin.
+- `Segment`: Line segment shape.
   Additional attributes:
-  - Segment.end: end of the segment.
+  - `Segment.end`: end of the segment.
 
   Modified methods:
-  - def __init__(self, origin: Coord, end: Coord, specs: Optional[Dict[str, Any]] = None) -> None: Initialize a segment from origin to end.
-- Rect: Rectangle shape.
+  - `def __init__(self, origin: Coord, end: Coord, specs: Optional[Dict[str, Any]] = None) -> None:` Initialize a segment from origin to end.
+- `Rect`: Rectangle shape.
   Additional attributes:
-  - Rect.top_right: top-right corner of the rectangle.
+  - `Rect.top_right`: top-right corner of the rectangle.
 
   Modified methods:
-  - def __init__(self, origin: Coord, top_right: Coord, specs: Optional[Dict[str, Any]] = None) -> None: Initialize the rectangle from origin to top_right.
-- Circle: Circle shape.
+  - `def __init__(self, origin: Coord, top_right: Coord, specs: Optional[Dict[str, Any]] = None) -> None:` Initialize the rectangle from origin to top_right.
+- `Circle`: Circle shape.
   Additional attributes:
-  - Circle.radius: radius of the circle.
+  - `Circle.radius`: radius of the circle.
 
   Modified methods:
-  - def __init__(self, origin: Coord, radius: int | float, specs: Optional[Dict[str, Any]] = None) -> None: Initialize circle at origin with radius.
+  - `def __init__(self, origin: Coord, radius: int | float, specs: Optional[Dict[str, Any]] = None) -> None:` Initialize circle at origin with radius.
 
 ### 5.4 vizwiz.Hitbox
 Class for object hitboxes.
 Attributes:
-- Hitbox.shapes: hitbox objects of the hitbox.
+- `Hitbox.shapes`: hitbox objects of the hitbox.
 
 Methods:
----
+- `def __init__(self, shapes: List[HitboxObject]) -> None:` Initializes a hitbox with a list of hitbox objects.
+- `def add_hitboxobject(self, shape:HitboxObject) -> None:` Adds a hitbox object to the hitbox.
+- `def shift(self, point: Coord) -> None:` Shift all shapes in the hitbox.
+- `def intersects(self, other: "Hitbox | HitboxObject") -> bool:` Check intersection with another Hitbox or HitboxObject.
+- `def on_mouse(self) -> bool:` Check intersection with mouse.
 
 ### 5.5 vizwiz.HitboxObject
-- Class descriptions
-- Method list
+`HitboxObject` is a base class that is used in inheritance for the shape subclasses.
+Attributes:
+- `HitboxObject.hitbox`: Hitbox that the HitboxObject is in.
 
 ### 5.6 vizwiz.Object
 - Class descriptions
