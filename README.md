@@ -117,14 +117,23 @@ Attributes:
 Methods:
 - `def __init__(self, shapes: List[HitboxObject]) -> None:` Initializes a hitbox with a list of hitbox objects.
 - `def add_hitboxobject(self, shape:HitboxObject) -> None:` Adds a hitbox object to the hitbox.
-- `def shift(self, point: Coord) -> None:` Shift all shapes in the hitbox.
+- `def shift(self, point: Coord) -> None:` Shift all objects in the hitbox.
 - `def intersects(self, other: "Hitbox | HitboxObject") -> bool:` Check intersection with another Hitbox or HitboxObject.
 - `def on_mouse(self) -> bool:` Check intersection with mouse.
 
 ### 5.5 vizwiz.HitboxObject
 `HitboxObject` is a base class that is used in inheritance for the shape subclasses.
 Attributes:
-- `HitboxObject.hitbox`: Hitbox that the HitboxObject is in.
+- `HitboxObject.hitbox`: Hitbox that the hitbox object is in.
+- `HitboxObject.origin`: Relative origin of the hitbox object.
+- `HitboxObject.master`: Display of the object of the hitbox of the hitbox object.
+
+Methods:
+- `def __init__(self, hitbox: Optional[Hitbox], origin: Coord, master: Display) -> None:` Initializes a hitbox object.
+- `def convert(self) -> Coord:` Convert local origin to screen coordinates.
+- `def shift(self, point: Coord) -> None:` Shift the hitbox object.
+- `def intersects(self, other: "HitboxObject | Hitbox") -> bool:` Check intersection with another hitbox object or hitbox.
+- `def on_mouse(self) -> bool:` Check intersection with mouse.
 
 ### 5.6 vizwiz.Object
 - Class descriptions
