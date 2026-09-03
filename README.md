@@ -85,24 +85,28 @@ Methods:
 
 There are currently 4 subclasses:
 - `Text`: Text shape.
+
   Additional attributes:
   - `Text.text`: string to display.
 
   Modified methods:
   - `def __init__(self, origin: Coord, text: str, specs: Optional[Dict[str, Any]] = None) -> None:` Initialize the text at origin.
 - `Segment`: Line segment shape.
+
   Additional attributes:
   - `Segment.end`: end of the segment.
 
   Modified methods:
   - `def __init__(self, origin: Coord, end: Coord, specs: Optional[Dict[str, Any]] = None) -> None:` Initialize a segment from origin to end.
 - `Rect`: Rectangle shape.
+
   Additional attributes:
   - `Rect.top_right`: top-right corner of the rectangle.
 
   Modified methods:
   - `def __init__(self, origin: Coord, top_right: Coord, specs: Optional[Dict[str, Any]] = None) -> None:` Initialize the rectangle from origin to top_right.
 - `Circle`: Circle shape.
+
   Additional attributes:
   - `Circle.radius`: radius of the circle.
 
@@ -134,6 +138,27 @@ Methods:
 - `def shift(self, point: Coord) -> None:` Shift the hitbox object.
 - `def intersects(self, other: "HitboxObject | Hitbox") -> bool:` Check intersection with another hitbox object or hitbox.
 - `def on_mouse(self) -> bool:` Check intersection with mouse.
+
+There are currently 3 subclasses:
+- `HitboxRect`: rectangle hitbox.
+
+  Additional attributes:
+  - `HitboxRect.top_right`: top-right corner of the rectangle.
+
+  Modified methods:
+  - `def __init__(self, hitbox: Optional[Hitbox], origin: Coord, top_right: Coord, master: Display) -> None:` Initialize a rectangular hitbox object.
+- `HitboxCircle`: circle hitbox.
+
+  Additional attributes:
+  - `HitboxCircle.radius`: radius of the circle.
+
+  Modified methods:
+  - `def __init__(self, hitbox: Optional[Hitbox], origin: Coord, radius: int | float, master: Display) -> None:` Initialize a circular hitbox object.
+- `HitboxPoint`: point hitbox.
+
+  Additional attributes: None
+  Modified methods: None
+
 
 ### 5.6 vizwiz.Object
 - Class descriptions

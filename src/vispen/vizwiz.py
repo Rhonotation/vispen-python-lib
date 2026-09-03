@@ -310,13 +310,7 @@ class HitboxRect(HitboxObject):
 class HitboxCircle(HitboxObject):
     """Circular hitbox."""
 
-    def __init__(
-        self,
-        hitbox: Optional[Hitbox],
-        origin: Coord,
-        radius: int | float,
-        master: Display,
-    ) -> None:
+    def __init__(self, hitbox: Optional[Hitbox], origin: Coord, radius: int | float, master: Display) -> None:
         """Initialize a circular hitbox."""
         super().__init__(hitbox, origin, master)
         self.radius: float = float(radius)
