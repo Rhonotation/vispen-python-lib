@@ -33,10 +33,90 @@ You can confirm Vispen is installed and importable:
 
 
 ## 3. Quickstart
-- Minimal example showing basic usage
-- How to create a VizWiz instance
-- How to add displays and objects
-- How to render
+Here is an example script in tests/test_basic.py.
+```text
+import time
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
+
+from vispen.vizwiz import (
+    Engine,
+    VizWiz,
+    Display,
+    Object,
+    Coord,
+    Rect,
+    TanhTween
+)
+
+# 1. Create the engine
+engine = Engine()
+
+# 2. Create VizWiz explicitly (required in v1.1.2b)
+viz = VizWiz()
+engine.viz = viz
+
+# 3. Create the display and add it to VizWiz
+display = Display(
+    master=viz,
+    origin=Coord(-200, -150),
+    top_right=Coord(200, 150),
+    id="main",
+    scale=20
+)
+viz.add_display(display)
+
+# 4. Create objects
+obj1 = Object(
+    master=display,
+    origin=Coord(0, 0),
+    id="box1",
+    shapes=[Rect(Coord(0, 0), Coord(2, 2))]
+)
+
+obj2 = Object(
+    master=display,
+    origin=Coord(5, 0),
+    id="box2",
+    shapes=[Rect(Coord(0, 0), Coord(1, 3))]
+)
+
+# 5. Add objects to the display
+display.add_object("box1", obj1)
+display.add_object("box2", obj2)
+
+# 6. Add tweens
+start_time = time.time()
+
+display.add_tween(
+    "box1",
+    TanhTween(
+        start=start_time,
+        duration=3,
+        point1=Coord(0, 0),
+        point2=Coord(10, 10),
+        sharpness=3
+    )
+)
+
+display.add_tween(
+    "box2",
+    TanhTween(
+        start=start_time,
+        duration=5,
+        point1=Coord(5, 0),
+        point2=Coord(-5, 10),
+        sharpness=4
+    )
+)
+
+# 7. Run the engine loop
+fps = 60
+while True:
+    engine.draw_frame()
+    time.sleep(1 / fps)
+```
 
 ## 4. Core Concepts
 ### VizWiz
@@ -348,12 +428,148 @@ Methods:
 - `def tanhtween(t, sharpness):` Calculates the tween function for the TanhTween.
 
 ## 6. Examples
-- Basic scene
-- Multiple objects
-- Custom objects
-- Coordinate updates
-- Rendering variations
+Here is an example from tests/test_square.py.
+```text
+import time
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
 
+from vispen.vizwiz import (
+    Engine,
+    VizWiz,
+    Display,
+    Object,
+    Coord,
+    Rect,
+    TanhTween,
+    Looper,
+    MultInterp
+)
+
+
+# 1. Create the engine
+engine = Engine()
+
+# 2. Create VizWiz explicitly (required in v1.1.2b)
+viz = VizWiz()
+engine.viz = viz
+
+# 3. Create the display and add it to VizWiz
+display = Display(
+    master=viz,
+    origin=Coord(-200, -150),
+    top_right=Coord(200, 150),
+    id="main",
+    scale=20
+)
+viz.add_display(display)
+
+# 4. Create the box object
+box = Object(
+    master=display,
+    origin=Coord(0, 0),
+    id="box",
+    shapes=[
+        Rect(
+            origin=Coord(0, 0),
+            top_right=Coord(2, 2),
+            specs={"fill_color": "blue", "color": "green", "width": 5}
+        )
+    ]
+)
+display.add_object("box", box)
+
+# 5. Let VizWiz initialize
+time.sleep(0.1)
+start = time.time()
+
+# 6. Create the four tweens for the square path
+tweens = [
+    TanhTween(start,     2, Coord(0, 0),  Coord(10, 0),  3),
+    TanhTween(start + 2, 2, Coord(10, 0), Coord(10, 10), 3),
+    TanhTween(start + 4, 2, Coord(10, 10), Coord(0, 10),  3),
+    TanhTween(start + 6, 2, Coord(0, 10),  Coord(0, 0),   3),
+]
+
+# 7. Wrap them in a looping chain
+chain = Looper([MultInterp(tweens)])
+
+# 8. Add tween to display
+display.add_tween("box", chain)
+
+# 9. Run the engine loop
+fps = 60
+while True:
+    engine.draw_frame()
+    time.sleep(1 / fps)
+```
+And here is an example from tests/test_button.py.
+```text
+import time
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
+
+from vispen.vizwiz import (
+    Engine, VizWiz, Display, Object, Coord, Rect, Hitbox, HitboxRect, Text
+)
+
+engine = Engine() # First step, creating the engine
+vizwiz = VizWiz() # Next, we create the VizWiz
+engine.viz = vizwiz
+display = Display(
+    master=engine.viz,
+    origin=Coord(0, 0),
+    top_right=Coord(400, 300),
+    id="main",
+    scale=20
+) # This is how you create the display.
+vizwiz.add_display(display)
+
+button = Object(
+    master=display,
+    origin=Coord(9,6.5),
+    id="button"
+) # We create a button object. Now it's time to give it its shape.
+
+button_body = Rect(
+    origin=Coord(0, 0),
+    top_right=Coord(2, 2),
+    specs={
+        "fill_color":"pink",
+        "color":"purple",
+        "width":3
+        }
+)
+button.add_shape(button_body)
+button_hitbox = Hitbox([]) # We initialize an empty hitbox.
+button_hitbox.add_hitboxobject(HitboxRect(button_hitbox, Coord(0,0), Coord(2,2), display)) # We add a button hitbox to it.
+button.set_hitbox(button_hitbox) # We set the hitbox.
+# Now, let's add some text!
+button_text = Text(
+    origin=Coord(1,1),
+    text="Click me to swap my color scheme!"
+    )
+# We will have to add it to the button.
+button.add_shape(button_text)
+# Finally, we'll add the button to the display.
+display.add_object("button", button)
+fps = 60
+time.sleep(0.1)
+
+while True:
+    if vizwiz.mouse.mouse_down:
+        if button.hitbox.on_mouse():
+            # We'll swap the color scheme.
+            button_body.specs = {
+                "fill_color":"purple",
+                "color":"pink",
+                "width":3
+                }
+    engine.draw_frame() # Finally, we draw the frame.
+    time.sleep(1 / fps)
+```
 ---
 
 ## 7. Project Structure
