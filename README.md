@@ -4,10 +4,33 @@
 Vispen is a "game" engine for making basic games. It's easy to learn and use.
 
 ## 2. Installation
-- Requirements
-- Installing from wheel
-- Installing from GitHub
-- Editable install for development
+
+Vispen is distributed as a standard Python package and can be installed directly from source or in editable mode for development.
+
+### Requirements
+
+- Python 3.10+
+- `pip` available in your environment
+- (Optional) `pytest` for running tests
+
+### Installing from source
+
+    pip install .
+
+This installs Vispen as a normal package.
+
+### Installing in editable mode (recommended for development)
+
+Editable mode lets you modify the source code and immediately test changes without reinstalling:
+
+    pip install -e .
+
+### Verifying installation
+
+You can confirm Vispen is installed and importable:
+
+    python -c "import vispen; print('Vispen imported successfully')"
+
 
 ## 3. Quickstart
 - Minimal example showing basic usage
@@ -16,17 +39,17 @@ Vispen is a "game" engine for making basic games. It's easy to learn and use.
 - How to render
 
 ## 4. Core Concepts
-- VizWiz
+### VizWiz
 VizWiz is the main container that is for rendering everything.
-- Engine
+### Engine
 Engine contains the VizWiz and acts like a root.
-- Display
+### Display
 Displays are things that the VizWiz contains, and they contain Objects.
-- Object
+### Object
 Objects are collections of shapes and/or hitboxes contained by a Display.
-- Coord
+### Coord
 Coords are coordinates that act like complex numbers. They are relative to whatever they're in, whether it be a shape or an object.
-- Utils
+### Utils
 utils.py contains some helpful functions that are used by some of the vizwiz.py classes. One important constant is utils.loop, which represents 10<sup>8</sup>. Using a 1:1s conversion rate, it would last ~3.17 years. It can be used in subclasses of Interpolation for looping movement.
 
 ## 5. API Reference
@@ -161,16 +184,65 @@ There are currently 3 subclasses:
 
 
 ### 5.6 vizwiz.Object
-- Class descriptions
-- Method list
+Class for objects.
+Attributes:
+- `Object.master`: Display of the object.
+- `Object.origin`: relative origin of the object.
+- `Object.id`: string to identify the object.
+- `Object.shapes`: list of shapes of the object.
+- `Object.hitbox`: optional hitbox of the object
+
+Methods:
+- `def __init__(self, master: "Display | Screen", origin: Coord, id: str, shapes: Optional[List[Shape]] = None, hitbox: Optional[Hitbox] = None) -> None:` Initialize an object.
+- `def shift(self, point: Coord) -> None:` Shift the object and its shapes and/or hitbox.
+- `def move(self, point: Coord) -> None:` Move the object to a new position.
+- `def draw(self) -> None:` Draw all shapes of the object.
+- `def intersects(self, other: "Object") -> bool:` Check intersection with another object.
+- `def convert(self, point: Coord) -> Coord:` Convert a local point to master's coordinates.
+- `def add_shape(self, shape:Shape) -> None:` Add a shape to the object.
+- `def add_hitboxobject(self, hitbox:HitboxObject) -> None:` Add a hitbox object to the hitbox.
+- `def set_hitbox(self, hitbox:Hitbox) -> None:` Sets the hitbox of the object.
 
 ### 5.7 vizwiz.Interpolation
-- Class descriptions
-- Method list
+`Interpolation` is a base class for interpolation between two points.
+Attributes:
+- `Interpolation.start`: start time.
+- `Interpolation.duration`: duration.
+- `Interpolation.point1`: start point.
+- `Interpolation.point2`: end point.
+
+Methods:
+- `def __init__(self, start: float, duration: float, point1: Coord, point2: Coord) -> None:` Initializes the interpolation.
+- `def finished(self) -> bool:` Return True if the interpolation has finished, and False if it has not.
+- `def active(self) -> bool:` Return True if the interpolation is active.
+- `def interpolate(self) -> Coord:` Return interpolated coordinate.
+
+There are currently 4 subclasses:
+- `LinTerp`: linear interpolation.
+- `SmoothStep`: smoothstep interpolation.
+- `SmootherStep`: smootherstep interpolation.
+- `TanhTween`: tanh-based interpolation. Note that `TanhTween.__init__` takes an extra float argument: sharpness.
 
 ### 5.8 vizwiz.MultInterp
-- Class descriptions
-- Method list
+Class for multiple interpolations.
+Attributes:
+- `MultInterp.tweens`: interpolations in order.
+- `MultInterp.index`: current interpolation.
+
+Methods:
+- `def __init__(self, tweens: Sequence[Interpolation]) -> None:` Initialize the MultInterp.
+- `def active(self) -> bool:` Return True if there is an active interpolation.
+- `def finished(self) -> bool:` Return True if all interpolations have finished.
+- `def interpolate(self) -> Coord:` Return interpolated coordinate from currently active tween.
+
+There is currently one subclass:
+- `Looper`: Class for looped interpolations.
+
+  Additional attributes:
+  `Looper.start_time`: Start time of the most recent loop.
+
+  Modified methods:
+  None
 
 ### 5.9 vizwiz.VizWiz
 - Class descriptions
@@ -189,7 +261,12 @@ There are currently 3 subclasses:
 - Method list
 
 ### 5.13 utils.py
-- Helper functions
+Constants:
+- `loop`: value equaling 10 ** 8, used in interpolations.
+
+Methods:
+- `def distance(point1, point2):` Calculates the Euclidean distance between two Coord objects.
+- `def tanhtween(t, sharpness):` Calculates the tween function for the TanhTween.
 
 ## 6. Examples
 - Basic scene
@@ -198,20 +275,99 @@ There are currently 3 subclasses:
 - Coordinate updates
 - Rendering variations
 
+---
+
 ## 7. Project Structure
-- Folder layout
-- Explanation of src/vispen
+
+Vispen uses a simple, readable layout that keeps the core library inside `src/vispen` and metadata at the top level.
+
+### Folder layout
+
+```text
+    vispen/
+    ├── src/
+    │   └── vispen/
+    │       ├── __init__.py
+    │       ├── vizwiz.py
+    │       ├── display.py
+    │       ├── object.py
+    │       ├── coord.py
+    │       └── utils.py
+    ├── tests/
+    ├── pyproject.toml
+    ├── README.md
+    └── LICENSE
+```
+
+### Explanation of `src/vispen`
+
+- `vizwiz.py` — main engine logic (VizWiz, Screen, Engine, Mouse)  
+- `display.py` — Display and Screen classes  
+- `object.py` — Object definitions and behavior  
+- `coord.py` — coordinate math utilities  
+- `utils.py` — shared helpers and internal utilities  
+
+---
 
 ## 8. Versioning
-- Current version
-- How versioning works
-- How to check vispen.__version__
+
+### Current version
+
+Vispen stores its version in `src/vispen/__init__.py`:
+
+    __version__ = "0.x.y"
+
+### How versioning works
+
+Vispen follows a semantic-style pattern:
+
+- **MAJOR** — breaking API changes  
+- **MINOR** — new features, no breaking changes  
+- **PATCH** — bug fixes and small improvements  
+
+### How to check `vispen.__version__`
+
+    import vispen
+    print(vispen.__version__)
+
+or:
+
+    python -c "import vispen; print(vispen.__version__)"
+
+---
 
 ## 9. Contributing
-- How to clone
-- How to install in editable mode
-- How to submit feedback or PRs
+
+### How to clone
+
+    git clone https://github.com/Rhonotation/vispen-python-lib.git
+    cd vispen-python-lib
+
+### How to install in editable mode
+
+    pip install -e .
+
+### How to submit feedback or PRs
+
+1. Open an issue describing the bug or feature request  
+2. Fork the repository  
+3. Create a branch for your changes  
+4. Run tests:
+
+       pytest
+
+5. Open a pull request explaining your changes  
+
+---
 
 ## 10. License
-- License type
-- Link to LICENSE file
+
+### License type
+
+Vispen is released under the **Apache 2.0 License**.
+
+### Link to LICENSE file
+
+    LICENSE
+
+at the root of the repository.

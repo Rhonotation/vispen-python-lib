@@ -389,14 +389,7 @@ class HitboxPoint(HitboxObject):
 class Object:
     """Drawable object composed of shapes, with an optional hitbox."""
 
-    def __init__(
-        self,
-        master: "Display | Screen",
-        origin: Coord,
-        id: str,
-        shapes: Optional[List[Shape]] = None,
-        hitbox: Optional[Hitbox] = None,
-    ) -> None:
+    def __init__(self, master: "Display | Screen", origin: Coord, id: str, shapes: Optional[List[Shape]] = None, hitbox: Optional[Hitbox] = None) -> None:
         """Initialize an object with shapes and optional hitbox."""
         self.master: Display | Screen = master
         self.origin: Coord = origin
@@ -450,13 +443,7 @@ class Object:
 class Interpolation:
     """Base class for interpolation between two points."""
 
-    def __init__(
-        self,
-        start: float,
-        duration: float,
-        point1: Coord,
-        point2: Coord,
-    ) -> None:
+    def __init__(self, start: float, duration: float, point1: Coord, point2: Coord) -> None:
         """Initialize interpolation."""
         self.start: float = start
         self.duration: float = duration
