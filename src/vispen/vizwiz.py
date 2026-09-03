@@ -1,9 +1,7 @@
 """
-Vispen v1.1.2b
-Features: Mouse functionality
-Made a small patch so that the mouse starts offscreen.
-Shifted displays to be completely in the VizWiz class, and removed the displays dictionary from the Engine class.
-Added align attribute to VizWiz's draw_text method.
+Vispen v1.1.3
+Made it so objects can contain other objects, and those objects can contain other objects, and so on. This allows for more complex structures.
+Also added support to this.
 """
 from __future__ import annotations
 from typing import Sequence
@@ -23,6 +21,14 @@ class Coord:
         """Initialize a coordinate at (x, y)."""
         self.x: float = float(x)
         self.y: float = float(y)
+
+    def __str__(self) -> str:
+        """Return string representation of the coordinate."""
+        return f"Coord({self.x}, {self.y})"
+
+    def __repr__(self) -> str:
+        """Return string representation of the coordinate."""
+        return f"Coord({self.x}, {self.y})"
 
     def __add__(self, other: Coord) -> Coord:
         """Add two coordinates."""
@@ -108,7 +114,7 @@ class Shape:
         """Shift the shape by a coordinate acting as a vector."""
         raise NotImplementedError("Subclasses must implement the shift method.")
 
-    def draw(self, master: Display | Screen, specs: dict | None = None) -> None:
+    def draw(self, master: Display | Screen, specs: dict | None = None, shift: Coord = Coord(0, 0)) -> None:
         """Draw the shape using the given master."""
         raise NotImplementedError("Subclasses must implement the draw method.")
 
@@ -131,11 +137,11 @@ class Text(Shape):
         """Shift the text by a coordinate acting as a vector."""
         self.origin = self.origin + point
 
-    def draw(self, master: "Display | Screen", specs: Optional[Dict[str, Any]] = None) -> None:
+    def draw(self, master: "Display | Screen", specs: Optional[Dict[str, Any]] = None, shift: Coord = Coord(0, 0)) -> None:
         """Draw the text using the given master."""
         if specs is None:
             specs = self.specs
-        master.create_text(self.origin, self.text, specs)
+        master.create_text(self.origin + shift, self.text, specs)
 
 
 class Segment(Shape):
@@ -151,11 +157,11 @@ class Segment(Shape):
         self.origin = self.origin + point
         self.end = self.end + point
 
-    def draw(self, master: "Display | Screen", specs: Optional[Dict[str, Any]] = None) -> None:
+    def draw(self, master: "Display | Screen", specs: Optional[Dict[str, Any]] = None, shift: Coord = Coord(0, 0)) -> None:
         """Draw the segment using the given master."""
         if specs is None:
             specs = self.specs
-        master.create_line(self.origin, self.end, specs)
+        master.create_line(self.origin + shift, self.end + shift, specs)
 
 
 class Rect(Shape):
@@ -171,11 +177,11 @@ class Rect(Shape):
         self.origin = self.origin + point
         self.top_right = self.top_right + point
 
-    def draw(self, master: "Display | Screen", specs: Optional[Dict[str, Any]] = None) -> None:
+    def draw(self, master: "Display | Screen", specs: Optional[Dict[str, Any]] = None, shift: Coord = Coord(0, 0)) -> None:
         """Draw the rectangle using the given master."""
         if specs is None:
             specs = self.specs
-        master.create_rectangle(self.origin, self.top_right, specs)
+        master.create_rectangle(self.origin + shift, self.top_right + shift, specs)
 
 
 class Circle(Shape):
@@ -190,11 +196,11 @@ class Circle(Shape):
         """Shift the circle by a coordinate acting as a vector."""
         self.origin = self.origin + point
 
-    def draw(self, master: "Display | Screen", specs: Optional[Dict[str, Any]] = None) -> None:
+    def draw(self, master: "Display | Screen", specs: Optional[Dict[str, Any]] = None, shift: Coord = Coord(0, 0)) -> None:
         """Draw the circle using the given master."""
         if specs is None:
             specs = self.specs
-        master.create_circle(self.origin, self.radius, specs)
+        master.create_circle(self.origin + shift, self.radius, specs)
 
 
 class Hitbox:
@@ -392,12 +398,12 @@ class HitboxPoint(HitboxObject):
 class Object:
     """Drawable object composed of shapes, with an optional hitbox."""
 
-    def __init__(self, master: "Display | Screen", origin: Coord, id: str, shapes: Optional[List[Shape]] = None, hitbox: Optional[Hitbox] = None) -> None:
+    def __init__(self, master: "Display | Screen", origin: Coord, id: str, shapes: Optional[List[Shape|Object]] = None, hitbox: Optional[Hitbox] = None) -> None:
         """Initialize an object with shapes and optional hitbox."""
         self.master: Display | Screen = master
         self.origin: Coord = origin
         self.id: str = id
-        self.shapes: List[Shape] = shapes if shapes is not None else []
+        self.shapes: List[Shape | Object] = shapes if shapes is not None else []
         self.hitbox: Hitbox = hitbox if hitbox is not None else Hitbox([])
 
     def shift(self, point: Coord) -> None:
@@ -414,11 +420,14 @@ class Object:
         self.shift(point - self.origin)
         self.draw()
 
-    def draw(self) -> None:
+    def draw(self, shift=Coord(0, 0)) -> None:
         """Draw all shapes of the object."""
         if self.shapes:
             for shape in self.shapes:
-                shape.draw(self.master, shape.specs)
+                if isinstance(shape, Object):
+                    shape.draw(shift=shift + shape.origin)
+                else:
+                    shape.draw(self.master, shape.specs, shift=shift)
 
     def intersects(self, other: "Object") -> bool:
         """Check intersection with another object."""
@@ -430,7 +439,7 @@ class Object:
         """Convert a local point to master's coordinates."""
         return point + self.origin
 
-    def add_shape(self, shape:Shape) -> None:
+    def add_shape(self, shape:Shape | Object) -> None:
         """Adds a shape to self."""
         self.shapes.append(shape)
 
