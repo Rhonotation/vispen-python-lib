@@ -82,6 +82,7 @@ Classes:
 
 ### 5.2 vizwiz.Coord
 Class for coordinates that behave like complex numbers.
+
 Attributes:
 - `Coord.x`: The x-coordinate of the object.
 - `Coord.y`: The y-coordinate of the object.
@@ -96,6 +97,7 @@ Methods:
 
 ### 5.3 vizwiz.Shape
 `Shape` is a base class that is used in inheritance for the shape subclasses.
+
 Attributes:
 - `Shape.origin`: the relative origin of the shape.
 - `Shape.specs`: the specifications or characteristics of the shape.
@@ -138,6 +140,7 @@ There are currently 4 subclasses:
 
 ### 5.4 vizwiz.Hitbox
 Class for object hitboxes.
+
 Attributes:
 - `Hitbox.shapes`: hitbox objects of the hitbox.
 
@@ -150,6 +153,7 @@ Methods:
 
 ### 5.5 vizwiz.HitboxObject
 `HitboxObject` is a base class that is used in inheritance for the shape subclasses.
+
 Attributes:
 - `HitboxObject.hitbox`: Hitbox that the hitbox object is in.
 - `HitboxObject.origin`: Relative origin of the hitbox object.
@@ -185,6 +189,7 @@ There are currently 3 subclasses:
 
 ### 5.6 vizwiz.Object
 Class for objects.
+
 Attributes:
 - `Object.master`: Display of the object.
 - `Object.origin`: relative origin of the object.
@@ -205,6 +210,7 @@ Methods:
 
 ### 5.7 vizwiz.Interpolation
 `Interpolation` is a base class for interpolation between two points.
+
 Attributes:
 - `Interpolation.start`: start time.
 - `Interpolation.duration`: duration.
@@ -225,6 +231,7 @@ There are currently 4 subclasses:
 
 ### 5.8 vizwiz.MultInterp
 Class for multiple interpolations.
+
 Attributes:
 - `MultInterp.tweens`: interpolations in order.
 - `MultInterp.index`: current interpolation.
@@ -245,20 +252,92 @@ There is currently one subclass:
   None
 
 ### 5.9 vizwiz.VizWiz
-- Class descriptions
-- Method list
+Visualization wrapper around turtle for drawing displays.
+
+Attributes:
+- `VizWiz.screen`: turtle screen.
+- `VizWiz.mouse`: mouse object.
+- `VizWiz.turtle`: turtle for the screen.
+- `VizWiz.displays`: dictionary of displays.
+
+Methods:
+- `def __init__(self, width: int = 800, height: int = 600, title: str = "VizWiz Visualization") -> None:` Initialize the VizWiz.
+- `def add_display(self, obj: "Display | Screen") -> None:` Adds a display to the VizWiz.
+- `def remove_display(self, id: str) -> None:` Removes a display from the VizWiz by ID.
+- `def draw_frame(self) -> None:` Draw a single frame for all displays.
+- `def def create_rectangle(self, origin: Coord, top_right: Coord, fill: bool = True, color: str = "black", fill_color: str = "black", width: int = 1) -> None:` Draw a rectangle.
+- `def create_circle(self, origin: Coord, radius: float, fill: bool = True, color: str = "black", fill_color: str = "black", width: int = 1) -> None:` Draw a circle.
+- `def create_line(self, origin: Coord, end: Coord, color: str = "black", width: int = 1) -> None:` Draw a line.
+- `    def create_text(self, origin: Coord, text: str, color: str = "black", align: str = "left", font: tuple[str, int, str] = ("Arial", 12, "normal")) -> None:` Write text.
 
 ### 5.10 vizwiz.Display
-- Class descriptions
-- Method list
+Fixed display for drawing objects.
+
+Attributes:
+- `Display.master`: VizWiz of the display.
+- `Display.origin`: Relative origin of the display.
+- `Display.top_right`: Top-right corner of the display.
+- `Display.id`: String id of the display.
+- `Display.objects`: Objects of the display.
+- `Display.scale`: Scale of the display. This means that a change in an object coordinate by 1 is a change in real coordinates of self.scale.
+- `Display.tweens`: Tweens of the display.
+
+Methods:
+- `def __init__(self, master: VizWiz, origin: Coord, top_right: Coord, id: str, objects: Optional[Dict[str, Object]] = None, scale: int = 20) -> None:` Initialize a display.
+- `def add_tween(self, id: str, tween: MultInterp | Looper | Interpolation) -> None:` Add a tween for an object by id.
+- `def remove_tween(self, id: str) -> None:` Remove a tween by id.
+- `def update_tweens(self) -> None:` Update all tweens and move their objects.
+- `def add_object(self, id: str, object: Object) -> None:` Add an object by id.
+- `def remove_object(self, id: str) -> None:` Remove an object by id.
+- `def draw(self) -> None:` Draw all objects in the display.
+- `def create_rectangle(self, origin: Coord, top_right: Coord, specs: Optional[Dict[str, Any]] = None) -> None:` Create a rectangle.
+- `def create_circle(self, origin: Coord, radius: float, specs: Optional[Dict[str, Any]] = None) -> None:` Create a circle.
+- `def create_line(self, origin: Coord, end: Coord, specs: Optional[Dict[str, Any]] = None) -> None:` Create a line.
+- `def create_text(self, origin: Coord, text: str, specs: Optional[Dict[str, Any]] = None) -> None:` Create text.
+- `def get_mouse_as_coord(self):` Gets the mouse as a coordinate.
+- `def get_mouse_as_hitbox(self):` Gets the mouse as a hitbox.
+- `def convert(self, point:Coord) -> Coord:` Convert a local point to screen coordinates.
+
+There is one subclass:
+- `Screen`: Panable and zoomable display.
+
+  Additional attributes:
+  - `Screen.pan_offset`: pan offset of the display.
+  - `Screen.zoom_factor`: zoom factor of the display.
+  
+  Modified methods:
+  - `def __init__(self, master: VizWiz, origin: Coord, top_right: Coord, id: str, objects: Optional[Dict[str, Object]] = None, scale: int = 20) -> None:` Initialize a scrren.
+
+  Additional methods:
+  - `def pan(self, offset: Coord) -> None:` Pan the screen by a given offset.
+  - `def zoom(self, factor: float) -> None:` Zoom the screen by a given factor.
 
 ### 5.11 vizwiz.Engine
-- Class descriptions
-- Method list
+Class for managing VizWiz and displays.
+
+Attributes:
+- `Engine.viz`: VizWiz of the engine.
+
+Methods:
+- `def __init__(self) -> None:` Initializes the engine.
+- `def draw_frame(self) -> None:` Draws a frame for all displays.
 
 ### 5.12 vizwiz.Mouse
-- Class descriptions
-- Method list
+Class for handling the mouse.
+
+Attributes:
+- `Mouse.mouse_pos`: position of the mouse.
+- `Mouse.left_click_down`: boolean for left-button down.
+- `Mouse.middle_click_down`: boolean for middle-button down.
+- `Mouse.right_click_down`: boolean for right-button down.
+- `Mouse.mouse_down`: boolean for mouse down.
+
+Methods:
+- `def __init__(self) -> None:` Initialize the mouse.
+- `def on_left_click(self, x: float, y: float) -> None:` Handle left-button down.
+- `def on_middle_click(self, x: float, y: float) -> None:` Handle middle-button down.
+- `def on_right_click(self, x: float, y: float) -> None:` Handle right-button down.
+- `def on_release(self, x: float, y: float) -> None:` Handle mouse button release.
 
 ### 5.13 utils.py
 Constants:

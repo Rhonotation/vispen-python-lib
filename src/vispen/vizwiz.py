@@ -1,6 +1,9 @@
 """
-Vispen v1.1.2
+Vispen v1.1.2b
 Features: Mouse functionality
+Made a small patch so that the mouse starts offscreen.
+Shifted displays to be completely in the VizWiz class, and removed the displays dictionary from the Engine class.
+Added align attribute to VizWiz's draw_text method.
 """
 from __future__ import annotations
 from typing import Sequence
@@ -613,12 +616,7 @@ class Looper(MultInterp):
 class VizWiz:
     """Visualization wrapper around turtle for drawing displays."""
 
-    def __init__(
-        self,
-        width: int = 800,
-        height: int = 600,
-        title: str = "VizWiz Visualization",
-    ) -> None:
+    def __init__(self, width: int = 800, height: int = 600, title: str = "VizWiz Visualization") -> None:
         """Initialize VizWiz with a turtle screen."""
         self.screen = turtle.Screen()
         self.screen.tracer(0)
@@ -665,15 +663,7 @@ class VizWiz:
             display.draw()
         self.screen.update()
 
-    def create_rectangle(
-        self,
-        origin: Coord,
-        top_right: Coord,
-        fill: bool = True,
-        color: str = "black",
-        fill_color: str = "black",
-        width: int = 1,
-    ) -> None:
+    def create_rectangle(self, origin: Coord, top_right: Coord, fill: bool = True, color: str = "black", fill_color: str = "black", width: int = 1) -> None:
         """Draw a rectangle using turtle."""
         self.turtle.color(color)
         self.turtle.width(width)
@@ -690,15 +680,7 @@ class VizWiz:
         if fill:
             self.turtle.end_fill()
 
-    def create_circle(
-        self,
-        origin: Coord,
-        radius: float,
-        fill: bool = True,
-        color: str = "black",
-        fill_color: str = "black",
-        width: int = 1,
-    ) -> None:
+    def create_circle(self, origin: Coord, radius: float, fill: bool = True, color: str = "black", fill_color: str = "black", width: int = 1) -> None:
         """Draw a circle using turtle."""
         self.turtle.color(color)
         self.turtle.width(width)
@@ -712,13 +694,7 @@ class VizWiz:
         if fill:
             self.turtle.end_fill()
 
-    def create_line(
-        self,
-        origin: Coord,
-        end: Coord,
-        color: str = "black",
-        width: int = 1,
-    ) -> None:
+    def create_line(self, origin: Coord, end: Coord, color: str = "black", width: int = 1) -> None:
         """Draw a line using turtle."""
         self.turtle.color(color)
         self.turtle.width(width)
@@ -727,31 +703,17 @@ class VizWiz:
         self.turtle.goto(end.x, end.y)
         self.turtle.penup()
 
-    def create_text(
-        self,
-        origin: Coord,
-        text: str,
-        color: str = "black",
-        font: tuple[str, int, str] = ("Arial", 12, "normal"),
-    ) -> None:
+    def create_text(self, origin: Coord, text: str, color: str = "black", align: str = "left", font: tuple[str, int, str] = ("Arial", 12, "normal")) -> None:
         """Draw text using turtle."""
         self.turtle.color(color)
         self.turtle.goto(origin.x, origin.y)
-        self.turtle.write(text, font=font)
+        self.turtle.write(text, align=align, font=font)
 
 
 class Display:
     """Fixed display for drawing objects."""
 
-    def __init__(
-        self,
-        master: VizWiz,
-        origin: Coord,
-        top_right: Coord,
-        id: str,
-        objects: Optional[Dict[str, Object]] = None,
-        scale: int = 20,
-    ) -> None:
+    def __init__(self, master: VizWiz, origin: Coord, top_right: Coord, id: str, objects: Optional[Dict[str, Object]] = None, scale: int = 20) -> None:
         """Initialize a display."""
         self.master: VizWiz = master
         self.origin: Coord = origin
@@ -790,12 +752,7 @@ class Display:
         for obj in self.objects.values():
             obj.draw()
 
-    def create_rectangle(
-        self,
-        origin: Coord,
-        top_right: Coord,
-        specs: Optional[Dict[str, Any]] = None,
-    ) -> None:
+    def create_rectangle(self, origin: Coord, top_right: Coord, specs: Optional[Dict[str, Any]] = None) -> None:
         """Create a rectangle in display coordinates."""
         if specs is None:
             specs = {}
@@ -805,12 +762,7 @@ class Display:
             **specs,
         )
 
-    def create_circle(
-        self,
-        origin: Coord,
-        radius: float,
-        specs: Optional[Dict[str, Any]] = None,
-    ) -> None:
+    def create_circle(self, origin: Coord, radius: float, specs: Optional[Dict[str, Any]] = None) -> None:
         """Create a circle in display coordinates."""
         if specs is None:
             specs = {}
@@ -820,12 +772,7 @@ class Display:
             **specs,
         )
 
-    def create_line(
-        self,
-        origin: Coord,
-        end: Coord,
-        specs: Optional[Dict[str, Any]] = None,
-    ) -> None:
+    def create_line(self, origin: Coord, end: Coord, specs: Optional[Dict[str, Any]] = None) -> None:
         """Create a line in display coordinates."""
         if specs is None:
             specs = {}
@@ -835,12 +782,7 @@ class Display:
             **specs,
         )
 
-    def create_text(
-        self,
-        origin: Coord,
-        text: str,
-        specs: Optional[Dict[str, Any]] = None,
-    ) -> None:
+    def create_text(self, origin: Coord, text: str, specs: Optional[Dict[str, Any]] = None) -> None:
         """Create text in display coordinates."""
         if specs is None:
             specs = {}
@@ -868,15 +810,7 @@ class Display:
 class Screen(Display):
     """Display that supports panning and zooming."""
 
-    def __init__(
-        self,
-        master: VizWiz,
-        origin: Coord,
-        top_right: Coord,
-        id: str,
-        objects: Optional[Dict[str, Object]] = None,
-        scale: int = 20,
-    ) -> None:
+    def __init__(self, master: VizWiz, origin: Coord, top_right: Coord, id: str, objects: Optional[Dict[str, Object]] = None, scale: int = 20) -> None:
         """Initialize a screen."""
         super().__init__(master, origin, top_right, id, objects, scale)
         self.pan_offset: Coord = Coord(0, 0)
@@ -908,25 +842,17 @@ class Engine:
     def __init__(self) -> None:
         """Initialize the engine."""
         self.viz: VizWiz = VizWiz()
-        self.displays: Dict[str, Display | Screen] = {}
-
-    def add_display(self, id: str, display: Display | Screen) -> None:
-        """Add a display to the engine."""
-        self.displays[id] = display
 
     def draw_frame(self) -> None:
         """Draw a frame for all displays."""
         self.viz.turtle.clear()
-        for display in self.displays.values():
-            display.update_tweens()
-            display.draw()
-        self.viz.screen.update()
+        self.viz.draw_frame()
 
 class Mouse:
     """Class for a mouse."""
     def __init__(self) -> None:
         """Initializes the mouse."""
-        self.mouse_pos: list[float] = [0.0, 0.0]
+        self.mouse_pos: list[float] = [utils.loop, utils.loop]
         self.left_click_down: bool = False
         self.right_click_down: bool = False
         self.middle_click_down: bool = False

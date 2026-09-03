@@ -17,7 +17,6 @@ display = Display(
     id="main",
     scale=20
 ) # This is how you create the display.
-engine.add_display("main", display) # This is how you add it.
 vizwiz.add_display(display)
 
 button = Object(
