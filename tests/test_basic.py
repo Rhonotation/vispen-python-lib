@@ -1,32 +1,37 @@
+import time
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
+
+from vispen.vizwiz import (
+    Engine,
+    VizWiz,
+    Display,
+    Object,
+    Coord,
+    Rect,
+    TanhTween
+)
+
 if __name__ == "__main__":
-    import sys
-    import os
-    import time
-
-    # Make src/ visible to Python
-    sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
-
-    from vispen.vizwiz import (
-        Engine,
-        Display,
-        Object,
-        Coord,
-        Rect,
-        TanhTween
-    )
-
+    # 1. Create the engine
     engine = Engine()
 
+    # 2. Create VizWiz explicitly (required in v1.1.2b)
+    viz = VizWiz()
+    engine.viz = viz
+
+    # 3. Create the display and add it to VizWiz
     display = Display(
-        master=engine.viz,
+        master=viz,
         origin=Coord(-200, -150),
         top_right=Coord(200, 150),
         id="main",
         scale=20
     )
+    viz.add_display(display)
 
-    engine.add_display("main", display)
-
+    # 4. Create objects
     obj1 = Object(
         master=display,
         origin=Coord(0, 0),
@@ -41,9 +46,11 @@ if __name__ == "__main__":
         shapes=[Rect(Coord(0, 0), Coord(1, 3))]
     )
 
-    display.objects["box1"] = obj1
-    display.objects["box2"] = obj2
+    # 5. Add objects to the display
+    display.add_object("box1", obj1)
+    display.add_object("box2", obj2)
 
+    # 6. Add tweens
     start_time = time.time()
 
     display.add_tween(
@@ -68,6 +75,8 @@ if __name__ == "__main__":
         )
     )
 
+    # 7. Run the engine loop
+    fps = 60
     while True:
         engine.draw_frame()
-        time.sleep(1/60)
+        time.sleep(1 / fps)

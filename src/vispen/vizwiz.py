@@ -841,12 +841,15 @@ class Engine:
 
     def __init__(self) -> None:
         """Initialize the engine."""
-        self.viz: VizWiz = VizWiz()
+        self.viz: Optional[VizWiz] = None
 
     def draw_frame(self) -> None:
         """Draw a frame for all displays."""
-        self.viz.turtle.clear()
-        self.viz.draw_frame()
+        if self.viz:
+            self.viz.turtle.clear()
+            self.viz.draw_frame()
+        else:
+            raise RuntimeError("VizWiz instance not initialized in Engine.")
 
 class Mouse:
     """Class for a mouse."""
