@@ -1,7 +1,6 @@
 """
-Vispen v1.2
-Made it so objects can contain other objects, and those objects can contain other objects, and so on. This allows for more complex structures.
-Also added support to this.
+Vispen v1.2.1
+Fixed tweens.
 """
 from __future__ import annotations
 from typing import Sequence
@@ -424,7 +423,7 @@ class Object:
                 if isinstance(shape, Object):
                     shape.draw(shift=shift + shape.origin)
                 else:
-                    shape.draw(self.master, shape.specs, shift=shift)
+                    shape.draw(self.master, shape.specs, shift=shift + self.origin)
 
     def intersects(self, other: "Object") -> bool:
         """Check intersection with another object."""

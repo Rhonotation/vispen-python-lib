@@ -52,26 +52,27 @@ display.add_object("box2", obj2)
 # 6. Add tweens
 start_time = time.time()
 
-display.add_tween(
-    "box1",
-    TanhTween(
+tween1 = TanhTween(
         start=start_time,
         duration=3,
         point1=Coord(0, 0),
         point2=Coord(10, 10),
         sharpness=3
-    )
 )
-
-display.add_tween(
-    "box2",
-    TanhTween(
+tween2 = TanhTween(
         start=start_time,
         duration=5,
         point1=Coord(5, 0),
         point2=Coord(-5, 10),
         sharpness=4
-    )
+)
+display.add_tween(
+    "box1",
+    tween1
+)
+display.add_tween(
+    "box2",
+    tween2
 )
 
 # 7. Run the engine loop
@@ -79,3 +80,4 @@ fps = 60
 while True:
     engine.draw_frame()
     time.sleep(1 / fps)
+    print(tween1.active(), tween2.active())

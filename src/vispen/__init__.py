@@ -1,2 +1,2 @@
-__version__ = "1.1.2b"
+__version__ = "1.2.1"
 from vispen import vizwiz
