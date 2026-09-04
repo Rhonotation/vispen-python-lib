@@ -42,6 +42,16 @@ levels = {
     [0,0,0,0,0,1,0,0,0,0,0,0],
     [1,6,7,1,1,1,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0]
+],
+2: [
+    [0,0,0,0,0,0,0,0,0,0,0,0],
+    [4,1,2,2,2,2,1,0,0,0,0,0],
+    [1,1,5,5,5,5,5,1,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,1,1,0,0,0],
+    [0,1,0,0,0,0,0,0,1,0,7,0],
+    [0,0,0,0,0,0,0,1,1,0,1,0],
+    [1,1,0,0,0,0,0,1,1,0,1,0]
 ]
 }
 colors = ['#FFFFFF', '#000000', '#777777', '#2A1503', '#00ED00', '#FF0000', '#FFED00', '#BBBB00']
@@ -128,7 +138,7 @@ level_object.add_shape(player)
 display.add_object("level", level_object)
 
 fps = 60
-while level <= len(levels):
+while True:
     yvel -= 1/300
     falling += 1
     xvel *= 0.9
@@ -157,30 +167,36 @@ while level <= len(levels):
         xvel -= 0.02
     player.shift(Coord(xvel, 0))
     collisions = get_collisions(player, level_object)
-    if 1 in collisions or 3 in collisions:
+    if 1 in collisions or 3 in collisions or player.origin.x < 0 or player.origin.x > 12:
+        if player.origin.x < 0 or player.origin.x > 12:
+            edge = True
+        else:
+            edge = False
         if 1 in collisions:
             s = -0.25 * abs(xvel)/(xvel)
         if 3 in collisions:
             s = 0
-        while 1 in collisions or 3 in collisions:
+        while 1 in collisions or 3 in collisions or player.origin.x < 0 or player.origin.x > 12:
             player.shift(Coord(-abs(xvel)/(300 * xvel), 0))
             collisions = get_collisions(player, level_object)
         player.shift(Coord(-abs(xvel)/(300 * xvel), 0))
         xvel = 0
-        if keyboard.is_pressed('up'):
+        if keyboard.is_pressed('up') and not edge:
             yvel = 0.07
             xvel = s
     engine.draw_frame()
     collisions = get_collisions(player, level_object)
     if 4 in collisions:
         level += 1
-        if level <= len(levels):
+        if level < len(levels):
             player.move(Coord(0.1, 2.1))
             display.remove_object("level")
             level_object = create_level(levels[level])
             level_object.add_shape(player)
             display.add_object("level", level_object)
-    if 5 in collisions:
+        else:
+            engine.quit()
+    if 5 in collisions or player.origin.y < 0:
         player.move(Coord(0.1, 2.1))
         display.remove_object("level")
         level_object = create_level(levels[level])

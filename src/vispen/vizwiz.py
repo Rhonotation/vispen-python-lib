@@ -1,6 +1,6 @@
 """
-Vispen v1.2.1
-Fixed tweens.
+Vispen v1.2.2
+Fixed multishifting in nested objects.
 """
 from __future__ import annotations
 from typing import Sequence
@@ -421,7 +421,7 @@ class Object:
         if self.shapes:
             for shape in self.shapes:
                 if isinstance(shape, Object):
-                    shape.draw(shift=shift + shape.origin)
+                    shape.draw(shift=shift)
                 else:
                     shape.draw(self.master, shape.specs, shift=shift + self.origin)
 
