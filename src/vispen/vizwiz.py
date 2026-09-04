@@ -1,5 +1,5 @@
 """
-Vispen v1.1.3
+Vispen v1.2
 Made it so objects can contain other objects, and those objects can contain other objects, and so on. This allows for more complex structures.
 Also added support to this.
 """
@@ -411,9 +411,6 @@ class Object:
         self.origin = self.origin + point
         if self.hitbox:
             self.hitbox.shift(point)
-        if self.shapes:
-            for shape in self.shapes:
-                shape.shift(point)
 
     def move(self, point: Coord) -> None:
         """Move the object to a new position."""
@@ -857,6 +854,13 @@ class Engine:
         if self.viz:
             self.viz.turtle.clear()
             self.viz.draw_frame()
+        else:
+            raise RuntimeError("VizWiz instance not initialized in Engine.")
+
+    def quit(self) -> None:
+        """Quit the engine and close the VizWiz window."""
+        if self.viz:
+            self.viz.screen.bye()
         else:
             raise RuntimeError("VizWiz instance not initialized in Engine.")
 

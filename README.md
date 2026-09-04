@@ -3,6 +3,8 @@
 ## 1. Overview
 Vispen is a "game" engine for making basic games. It's easy to learn and use.
 
+---
+
 ## 2. Installation
 
 Vispen is distributed as a standard Python package and can be installed directly from source or in editable mode for development.
@@ -31,6 +33,7 @@ You can confirm Vispen is installed and importable:
 
     python -c "import vispen; print('Vispen imported successfully')"
 
+---
 
 ## 3. Quickstart
 Here is an example script in tests/test_basic.py.
@@ -118,6 +121,8 @@ while True:
     time.sleep(1 / fps)
 ```
 
+---
+
 ## 4. Core Concepts
 ### VizWiz
 VizWiz is the main container that is for rendering everything.
@@ -131,6 +136,8 @@ Objects are collections of shapes and/or hitboxes contained by a Display.
 Coords are coordinates that act like complex numbers. They are relative to whatever they're in, whether it be a shape or an object.
 ### Utils
 utils.py contains some helpful functions that are used by some of the vizwiz.py classes. One important constant is utils.loop, which represents 10<sup>8</sup>. Using a 1:1s conversion rate, it would last ~3.17 years. It can be used in subclasses of Interpolation for looping movement.
+
+---
 
 ## 5. API Reference
 ### 5.1 vizwiz.py
@@ -186,7 +193,7 @@ Methods:
 - `def __init__(self, origin: Coord, specs: Optional[Dict[str, Any]] = None) -> None:` Initialize the shape.
 - `def modify_specs(self, new_specs: Dict[str, Any]) -> None:` Update the shape's drawing specifications.
 - `def shift(self, point: Coord) -> None:` Shift the shape by a coordinate acting as a vector.
-- `def draw(self, master: Display | Screen, specs: dict | None = None) -> None:` Draw the shape using the given master.
+- `def draw(self, master: Display | Screen, specs: dict | None = None, shift: Coord = Coord(0, 0)) -> None:` Draw the shape using the given master.
 
 There are currently 4 subclasses:
 - `Text`: Text shape.
@@ -274,17 +281,17 @@ Attributes:
 - `Object.master`: Display of the object.
 - `Object.origin`: relative origin of the object.
 - `Object.id`: string to identify the object.
-- `Object.shapes`: list of shapes of the object.
+- `Object.shapes`: list of shapes/objects of the object.
 - `Object.hitbox`: optional hitbox of the object
 
 Methods:
-- `def __init__(self, master: "Display | Screen", origin: Coord, id: str, shapes: Optional[List[Shape]] = None, hitbox: Optional[Hitbox] = None) -> None:` Initialize an object.
+- `def __init__(self, master: "Display | Screen", origin: Coord, id: str, shapes: Optional[List[Shape|Object]] = None, hitbox: Optional[Hitbox] = None) -> None:` Initialize an object.
 - `def shift(self, point: Coord) -> None:` Shift the object and its shapes and/or hitbox.
 - `def move(self, point: Coord) -> None:` Move the object to a new position.
-- `def draw(self) -> None:` Draw all shapes of the object.
+- `def draw(self, shift=Coord(0, 0)) -> None:` Draw all shapes of the object.
 - `def intersects(self, other: "Object") -> bool:` Check intersection with another object.
 - `def convert(self, point: Coord) -> Coord:` Convert a local point to master's coordinates.
-- `def add_shape(self, shape:Shape) -> None:` Add a shape to the object.
+- `def add_shape(self, shape:Shape | Object) -> None:` Add a shape to the object.
 - `def add_hitboxobject(self, hitbox:HitboxObject) -> None:` Add a hitbox object to the hitbox.
 - `def set_hitbox(self, hitbox:Hitbox) -> None:` Sets the hitbox of the object.
 
@@ -401,6 +408,7 @@ Attributes:
 Methods:
 - `def __init__(self) -> None:` Initializes the engine.
 - `def draw_frame(self) -> None:` Draws a frame for all displays.
+- `def quit(self) -> None:` Quit the engine and close the VizWiz window.
 
 ### 5.12 vizwiz.Mouse
 Class for handling the mouse.
@@ -426,6 +434,8 @@ Constants:
 Methods:
 - `def distance(point1, point2):` Calculates the Euclidean distance between two Coord objects.
 - `def tanhtween(t, sharpness):` Calculates the tween function for the TanhTween.
+
+---
 
 ## 6. Examples
 Here is an example from tests/test_square.py.
@@ -568,6 +578,64 @@ while True:
                 "width":3
                 }
     engine.draw_frame() # Finally, we draw the frame.
+    time.sleep(1 / fps)
+```
+Here is an example from tests/test_grid.py:
+```text
+import time
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
+
+from vispen.vizwiz import (
+    Engine,
+    VizWiz,
+    Display,
+    Object,
+    Coord,
+    Segment
+)
+
+engine = Engine() # First step, creating the engine
+vizwiz = VizWiz() # Next, we create the VizWiz
+engine.viz = vizwiz
+display = Display(
+    master=engine.viz,
+    origin=Coord(0, 0),
+    top_right=Coord(400, 300),
+    id="main",
+    scale=20
+) # This is how you create the display.
+vizwiz.add_display(display)
+
+# In this project, we'll draw a bunch of segments! So, we'll create a grid object.
+grid = Object(
+    master=display,
+    origin=Coord(0, 0),
+    id="grid"
+)
+# First, we'll draw the vertical segments.
+for x in range(0, 21):
+    segment = Segment(
+        origin=Coord(x, 0),
+        end=Coord(x, 15),
+        specs={"color":"black", "width":1}
+    )
+    grid.add_shape(segment)
+# Next, we'll draw the horizontal segments.
+for y in range(0, 16):
+    segment = Segment(
+        origin=Coord(0, y),
+        end=Coord(20, y),
+        specs={"color":"black", "width":1}
+    )
+    grid.add_shape(segment)
+display.add_object("grid", grid) # Finally, we add the grid to the display.
+
+# Time for the engine loop!
+fps = 60
+while True:
+    engine.draw_frame()
     time.sleep(1 / fps)
 ```
 ---
