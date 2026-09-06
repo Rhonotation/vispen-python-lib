@@ -1,6 +1,6 @@
 """
-Vispen v1.2.2
-Fixed multishifting in nested objects.
+Vispen v1.3.0
+Added mouse gesture detection and improved mouse button handling.
 """
 from __future__ import annotations
 from typing import Sequence
