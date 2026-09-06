@@ -33,7 +33,7 @@ You can confirm Vispen is installed and importable:
 
     python -c "import vispen; print('Vispen imported successfully')"
 
-### Direct installation.
+### Direct installation
 
 You can run
 
