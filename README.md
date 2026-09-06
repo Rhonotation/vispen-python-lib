@@ -1,4 +1,4 @@
-# Vispen v1.2.2 Documentation
+# Vispen v1.3.0 Documentation
 
 ## 1. Overview
 Vispen is a "game" engine for making basic games. It's easy to learn and use.
@@ -415,10 +415,15 @@ Class for handling the mouse.
 
 Attributes:
 - `Mouse.mouse_pos`: position of the mouse.
-- `Mouse.left_click_down`: boolean for left-button down.
-- `Mouse.middle_click_down`: boolean for middle-button down.
-- `Mouse.right_click_down`: boolean for right-button down.
-- `Mouse.mouse_down`: boolean for mouse down.
+- `Mouse.mouse_state`: dict for what mouse buttons are down.
+- `Mouse.click_start_time`: dict for start times of clicks for each mouse button.
+- `Mouse.click_start_loc`: dict for start locations of clicks for each mouse button.
+  
+  Keys:
+  - `LMB`: left mouse button
+  - `RMB`: right mouse button
+  - `MMB`: middle mouse button
+  - `MBD`: mouse button
 
 Methods:
 - `def __init__(self) -> None:` Initialize the mouse.
@@ -426,6 +431,11 @@ Methods:
 - `def on_middle_click(self, x: float, y: float) -> None:` Handle middle-button down.
 - `def on_right_click(self, x: float, y: float) -> None:` Handle right-button down.
 - `def on_release(self, x: float, y: float) -> None:` Handle mouse button release.
+- `def __getitem__(self, key: str) -> bool:` Get the state of a mouse button.
+- `def __setitem__(self, key: str, value: bool) -> None:` Set the state of a mouse button.
+- `def click_duration(self, button: str) -> Optional[float]:` Get duration of a mouse button click.
+- `def click_displacement(self, button: str) -> Optional[float]:` Get displacement of a mouse button click.
+- `def gesture(self) -> str:` Get a string representation of the current mouse gesture.
 
 ### 5.13 utils.py
 Constants:
@@ -569,7 +579,7 @@ fps = 60
 time.sleep(0.1)
 
 while True:
-    if vizwiz.mouse.mouse_down:
+    if vizwiz.mouse["MBD"]:
         if button.hitbox.on_mouse():
             # We'll swap the color scheme.
             button_body.specs = {

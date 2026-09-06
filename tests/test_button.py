@@ -51,7 +51,7 @@ fps = 60
 time.sleep(0.1)
 
 while True:
-    if vizwiz.mouse.mouse_down:
+    if vizwiz.mouse["MBD"]:
         if button.hitbox.on_mouse():
             # We'll swap the color scheme.
             button_body.specs = {

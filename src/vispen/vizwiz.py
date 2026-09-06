@@ -641,7 +641,7 @@ class VizWiz:
             # Convert TK coordinates to turtle coordinates
             x = event.x - self.screen.window_width() / 2
             y = self.screen.window_height() / 2 - event.y
-            self.mouse.mouse_pos = [x, y]
+            self.mouse.mouse_pos = (x, y)
 
         canvas = self.screen.getcanvas()
         canvas.bind("<Motion>", lambda e: on_move(e))
@@ -867,31 +867,106 @@ class Mouse:
     """Class for a mouse."""
     def __init__(self) -> None:
         """Initializes the mouse."""
-        self.mouse_pos: list[float] = [utils.loop, utils.loop]
-        self.left_click_down: bool = False
-        self.right_click_down: bool = False
-        self.middle_click_down: bool = False
-        self.mouse_down: bool = False
+        self.mouse_pos: tuple[float, float] = (utils.loop, utils.loop)
+        self.mouse_state: dict[str, bool] = {
+            "LMB": False,
+            "RMB": False,
+            "MMB": False,
+            "MBD": False,
+        }
+        self.click_start_time: dict[str, Optional[float]] = {
+            "LMB": None,
+            "RMB": None,
+            "MMB": None,
+            "MBD": None,
+        }
+        self.click_start_loc: dict[str, Optional[tuple[float, float]]] = {
+            "LMB": None,
+            "RMB": None,
+            "MMB": None,
+            "MBD": None,
+        }
+
+    def __getitem__(self, key: str) -> bool:
+        """Get the state of a mouse button."""
+        return self.mouse_state[key]
+
+    def __setitem__(self, key: str, value: bool) -> None:
+        """Set the state of a mouse button."""
+        self.mouse_state[key] = value
 
     def on_left_click(self, x: float, y: float) -> None:
         """Handle left mouse button down."""
-        self.left_click_down = True
-        self.mouse_down = True
+        self["LMB"] = True
+        self["MBD"] = True
+        self.click_start_loc["LMB"] = self.mouse_pos
+        self.click_start_loc["MBD"] = self.mouse_pos
+        self.click_start_time["LMB"] = time.time()
+        self.click_start_time["MBD"] = time.time()
 
     def on_right_click(self, x: float, y: float) -> None:
         """Handle right mouse button down."""
-        self.right_click_down = True
-        self.mouse_down = True
-
+        self["RMB"] = True
+        self["MBD"] = True
+        self.click_start_loc["RMB"] = self.mouse_pos
+        self.click_start_loc["MBD"] = self.mouse_pos
+        self.click_start_time["RMB"] = time.time()
+        self.click_start_time["MBD"] = time.time()
 
     def on_middle_click(self, x: float, y: float) -> None:
         """Handle middle mouse button down."""
-        self.middle_click_down = True
-        self.mouse_down = True
+        self["MMB"] = True
+        self["MBD"] = True
+        self.click_start_loc["MMB"] = self.mouse_pos
+        self.click_start_loc["MBD"] = self.mouse_pos
+        self.click_start_time["MMB"] = time.time()
+        self.click_start_time["MBD"] = time.time()
 
     def on_release(self, x: float, y: float) -> None:
         """Handle mouse button release."""
-        self.left_click_down = False
-        self.right_click_down = False
-        self.middle_click_down = False
-        self.mouse_down = False
+        self["LMB"] = False
+        self["RMB"] = False
+        self["MMB"] = False
+        self["MBD"] = False
+
+    def click_duration(self, button: str) -> Optional[float]:
+        """Get the duration of a mouse button click."""
+        start_time = self.click_start_time[button]
+        if start_time is not None:
+            return time.time() - start_time
+        return None
+
+    def click_displacement(self, button: str) -> Optional[float]:
+        """Get the displacement of a mouse button click."""
+        loc = self.click_start_loc[button]
+        if loc is None:
+            return None
+        start_x, start_y = loc
+        current_x, current_y = self.mouse_pos
+        return ((current_x - start_x) ** 2 + (current_y - start_y) ** 2) ** 0.5
+
+    def gesture(self) -> str:
+        """Get a string representation of the current mouse gesture."""
+        output = ""
+        if self["MBD"]:
+            if self["LMB"]:
+                output += "L"
+            if self["RMB"]:
+                output += "R"
+            if self["MMB"]:
+                output += "M"
+            if self.click_start_loc["MBD"] is not None:
+                displacement = self.click_displacement("MBD")
+                if displacement != None and displacement > 10:
+                    duration = self.click_duration("MBD")
+                    if duration is not None:
+                        output += f"D{duration}"
+                else:
+                    duration = self.click_duration("MBD")
+                    if duration is not None:
+                        output += f"C{duration}"
+            else:
+                output += "~~"
+            return output
+        else:
+            return "none"

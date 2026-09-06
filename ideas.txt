@@ -1,0 +1,17 @@
+v1.3.   Completely rework mouse with gesture support.
+v1.4.   Add a new shape called Polygon.
+v1.5.   Add a right-triangle hitbox.
+        Add a general triangle hitbox.
+        Add a polygon hitbox (with triangulation, OBVIOUSLY).
+v1.6.   Make hitbox objects able to contain hitbox objects able to contain hitbox objects able to contain... .
+        Add a hitbox class that takes intersections of hitboxes (by creating random sample points of a certain density).
+        Add hitbox-minus the same way (like hitbox A but you ate the part that's hitbox B).
+        Make a function to turn hitboxes into random point-samplings.
+v.1.7   Add more tweens (ones that loop).
+        Add keyframing.
+v1.8.   Make a Camera class for the Screen class.
+v1.9. Add layers
+v2.0.   Make a custom scripting language for vispen that compiles into python.
+        Make a subclass of Display for PHYSICS (kinda).
+        Add a display subclass for "3D".
+        Add image support (IDK if that's even possible but).
