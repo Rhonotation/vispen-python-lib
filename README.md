@@ -33,6 +33,20 @@ You can confirm Vispen is installed and importable:
 
     python -c "import vispen; print('Vispen imported successfully')"
 
+### Direct installation.
+
+You can run
+
+    pip install git+https://github.com/Rhonotation/vispen-python-lib.git
+
+to easily install Vispen. For editable mode, run
+
+    git clone https://github.com/Rhonotation/vispen-python-lib.git
+    cd vispen-python-lib
+    pip install -e .
+
+to install Vispen in editable mode.
+
 ---
 
 ## 3. Quickstart
