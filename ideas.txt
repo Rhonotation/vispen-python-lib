@@ -1,6 +1,7 @@
-v1.3.   Completely rework mouse with gesture support.
+!v1.3.  Completely rework mouse with gesture support.
 v1.3+.  Add a Keyboard class.
-v1.4.   Add a new shape called Polygon.
+!v1.4.  Add a new shape called Polygon.
+v1.4+.  Add a new shape called 1D Gradient.
 v1.5.   Add a right-triangle hitbox.
         Add a general triangle hitbox.
         Add a polygon hitbox (with triangulation, OBVIOUSLY).
@@ -11,7 +12,7 @@ v1.6.   Make hitbox objects able to contain hitbox objects able to contain hitbo
 v.1.7   Add more tweens (ones that loop).
         Add keyframing.
 v1.8.   Make a Camera class for the Screen class.
-v1.9.   Add layers
+v1.9.   Add layers.
 v2.0.   Make a custom scripting language for vispen that compiles into python.
         Make a subclass of Display for PHYSICS (kinda).
         Add a display subclass for "3D".

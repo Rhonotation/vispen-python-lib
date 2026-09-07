@@ -1,6 +1,6 @@
 """
-Vispen v1.3.0
-Added mouse gesture detection and improved mouse button handling.
+Vispen v1.4.1
+Added polygon class and fixed rendering for Screen class.
 """
 from __future__ import annotations
 from typing import Sequence
@@ -200,6 +200,26 @@ class Circle(Shape):
         if specs is None:
             specs = self.specs
         master.create_circle(self.origin + shift, self.radius, specs)
+
+
+class Polygon(Shape):
+    """Polygon shape."""
+
+    def __init__(self, points: List[Coord], specs: Optional[Dict[str, Any]] = None) -> None:
+        """Initialize a polygon with a list of points."""
+        super().__init__(points[0] if points else Coord(0, 0), specs)
+        self.points: List[Coord] = points
+
+    def shift(self, point: Coord) -> None:
+        """Shift the polygon by a coordinate acting as a vector."""
+        self.origin = self.origin + point
+        self.points = [point + point for point in self.points]
+
+    def draw(self, master: "Display | Screen", specs: Optional[Dict[str, Any]] = None, shift: Coord = Coord(0, 0)) -> None:
+        """Draw the polygon using the given master."""
+        if specs is None:
+            specs = self.specs
+        master.create_polygon([point + shift for point in self.points], specs)
 
 
 class Hitbox:
@@ -714,6 +734,22 @@ class VizWiz:
         self.turtle.goto(origin.x, origin.y)
         self.turtle.write(text, align=align, font=font)
 
+    def create_polygon(self, points: List[Coord], fill: bool = True, color: str = "black", fill_color: str = "black", width: int = 1) -> None:
+        """Draw a polygon using turtle."""
+        self.turtle.color(color)
+        self.turtle.width(width)
+        if fill:
+            self.turtle.begin_fill()
+            self.turtle.fillcolor(fill_color)
+        self.turtle.goto(points[0].x, points[0].y)
+        self.turtle.pendown()
+        for point in points[1:]:
+            self.turtle.goto(point.x, point.y)
+        self.turtle.goto(points[0].x, points[0].y)  # Close the polygon
+        self.turtle.penup()
+        if fill:
+            self.turtle.end_fill()
+
 
 class Display:
     """Fixed display for drawing objects."""
@@ -762,8 +798,8 @@ class Display:
         if specs is None:
             specs = {}
         self.master.create_rectangle(
-            origin * self.scale + self.origin,
-            top_right * self.scale + self.origin,
+            self.convert(origin),
+            self.convert(top_right),
             **specs,
         )
 
@@ -772,8 +808,8 @@ class Display:
         if specs is None:
             specs = {}
         self.master.create_circle(
-            origin * self.scale + self.origin,
-            radius * self.scale,
+            self.convert(origin),
+            (self.convert(origin + Coord(radius, 0)) - self.convert(origin)).x,
             **specs,
         )
 
@@ -782,16 +818,23 @@ class Display:
         if specs is None:
             specs = {}
         self.master.create_line(
-            origin * self.scale + self.origin,
-            end * self.scale + self.origin,
+            self.convert(origin),
+            self.convert(end),
             **specs,
         )
+
+    def create_polygon(self, points: List[Coord], specs: Optional[Dict[str, Any]] = None) -> None:
+        """Create a polygon in display coordinates."""
+        if specs is None:
+            specs = {}
+        scaled_points = [self.convert(point) for point in points]
+        self.master.create_polygon(scaled_points, **specs)
 
     def create_text(self, origin: Coord, text: str, specs: Optional[Dict[str, Any]] = None) -> None:
         """Create text in display coordinates."""
         if specs is None:
             specs = {}
-        self.master.create_text(origin * self.scale + self.origin, text, **specs)
+        self.master.create_text(self.convert(origin), text, **specs)
 
     def get_mouse_as_coord(self):
         """Gets the mouse as a coordinate."""

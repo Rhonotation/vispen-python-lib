@@ -1,4 +1,4 @@
-# Vispen v1.3.0 Documentation
+# Vispen v1.4.1 Documentation
 
 ## 1. Overview
 Vispen is a "game" engine for making basic games. It's easy to learn and use.
@@ -209,35 +209,43 @@ Methods:
 - `def shift(self, point: Coord) -> None:` Shift the shape by a coordinate acting as a vector.
 - `def draw(self, master: Display | Screen, specs: dict | None = None, shift: Coord = Coord(0, 0)) -> None:` Draw the shape using the given master.
 
-There are currently 4 subclasses:
-- `Text`: Text shape.
+There are currently 5 subclasses:
+- `Text`: text shape.
 
   Additional attributes:
   - `Text.text`: string to display.
 
   Modified methods:
   - `def __init__(self, origin: Coord, text: str, specs: Optional[Dict[str, Any]] = None) -> None:` Initialize the text at origin.
-- `Segment`: Line segment shape.
+- `Segment`: line segment shape.
 
   Additional attributes:
   - `Segment.end`: end of the segment.
 
   Modified methods:
   - `def __init__(self, origin: Coord, end: Coord, specs: Optional[Dict[str, Any]] = None) -> None:` Initialize a segment from origin to end.
-- `Rect`: Rectangle shape.
+- `Rect`: rectangle shape.
 
   Additional attributes:
   - `Rect.top_right`: top-right corner of the rectangle.
 
   Modified methods:
   - `def __init__(self, origin: Coord, top_right: Coord, specs: Optional[Dict[str, Any]] = None) -> None:` Initialize the rectangle from origin to top_right.
-- `Circle`: Circle shape.
+- `Circle`: circle shape.
 
   Additional attributes:
   - `Circle.radius`: radius of the circle.
 
   Modified methods:
   - `def __init__(self, origin: Coord, radius: int | float, specs: Optional[Dict[str, Any]] = None) -> None:` Initialize circle at origin with radius.
+
+- `Polygon`: polygon shape.
+
+  Additional attributes:
+  - `Polygon.points`: list of points.
+
+  Modified methods:
+  - `def __init__(self, points: List[Coord], specs: Optional[Dict[str, Any]] = None) -> None:` Initialize polygon at origin with points.
 
 ### 5.4 vizwiz.Hitbox
 Class for object hitboxes.

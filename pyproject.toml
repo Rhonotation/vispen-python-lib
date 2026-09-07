@@ -1,6 +1,6 @@
 [project]
 name = "vispen"
-version = "1.3.0"
+version = "1.4.1"
 description = "A lightweight 'game engine' built on Python's turtle graphics."
 authors = [
     { name = "Rhonotation" }
