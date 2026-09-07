@@ -795,7 +795,6 @@ class Display:
 
     def get_mouse_as_coord(self):
         """Gets the mouse as a coordinate."""
-        global mouse_pos
         new_x = (self.master.mouse.mouse_pos[0] - self.origin.x) / self.scale
         new_y = (self.master.mouse.mouse_pos[1] - self.origin.y) / self.scale
         return Coord(new_x, new_y)
@@ -835,7 +834,6 @@ class Screen(Display):
 
     def get_mouse_as_coord(self):
         """Gets the mouse as a coordinate."""
-        global mouse_pos
         new_x = (self.master.mouse.mouse_pos[0] - self.origin.x - self.pan_offset.x) / self.scale / self.zoom_factor
         new_y = (self.master.mouse.mouse_pos[1] - self.origin.y - self.pan_offset.y) / self.scale / self.zoom_factor
         return Coord(new_x, new_y)
