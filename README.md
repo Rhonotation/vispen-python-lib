@@ -1,4 +1,4 @@
-# Vispen v1.4.1 Documentation
+# Vispen v1.5.1b Documentation
 
 ## 1. Overview
 Vispen is a "game" engine for making basic games. It's easy to learn and use.
@@ -195,6 +195,7 @@ Methods:
 - `def __sub__(self, other: Coord) -> Coord:` Subtract one coordinate from another.
 - `def __mul__(self, other: Coord | int | float) -> Coord:` Multiply two coordinates, or a coordinate by a scalar.
 - `def __truediv__(self, other: Coord | int | float) -> Coord:` Divide one coordinate by another or by a scalar.
+- `def __str__(self) -> str:` (equivalent to `def __repr__(self) -> str:`) Return string representation of the coordinate.
 
 ### 5.3 vizwiz.Shape
 `Shape` is a base class that is used in inheritance for the shape subclasses.
@@ -275,11 +276,14 @@ Methods:
 - `def intersects(self, other: "HitboxObject | Hitbox") -> bool:` Check intersection with another hitbox object or hitbox.
 - `def on_mouse(self) -> bool:` Check intersection with mouse.
 
-There are currently 3 subclasses:
+There are currently 4 subclasses:
 - `HitboxRect`: rectangle hitbox.
 
   Additional attributes:
   - `HitboxRect.top_right`: top-right corner of the rectangle.
+
+  Additional methods:
+  - `def pointhitbox(self, point):` Gets a point of self as a HitboxPoint.
 
   Modified methods:
   - `def __init__(self, hitbox: Optional[Hitbox], origin: Coord, top_right: Coord, master: Display) -> None:` Initialize a rectangular hitbox object.
@@ -288,12 +292,26 @@ There are currently 3 subclasses:
   Additional attributes:
   - `HitboxCircle.radius`: radius of the circle.
 
+  Additional methods:
+  - `def originhitbox(self, point):` Gets the origin of self as a HitboxPoint.
+
   Modified methods:
   - `def __init__(self, hitbox: Optional[Hitbox], origin: Coord, radius: int | float, master: Display) -> None:` Initialize a circular hitbox object.
 - `HitboxPoint`: point hitbox.
 
   Additional attributes: None
   Modified methods: None
+- `HitboxTriangle`: triangle hitbox.
+
+  Additional attributes:
+  - `HitboxTriangle.point1`: one point of the triangle.
+  - `HitboxTriangle.point2`: the other point of the triangle.
+
+  Additional methods:
+  - `def pointhitbox(self, point):` Gets a point of self as a HitboxPoint.
+
+  Modified methods:
+  - `def __init__(self, hitbox: Optional[Hitbox], origin: Coord, point1: Coord, point2: Coord, master: Display) -> None:` Initialize a triangular hitbox object.
 
 
 ### 5.6 vizwiz.Object
@@ -877,6 +895,57 @@ while True:
         level_object.add_shape(player)
         display.add_object("level", level_object)
     time.sleep(1 / fps)
+```
+Here is an example from tests/test_circle_gradient.py:
+```
+import time
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
+
+from vispen.vizwiz import (
+    Engine,
+    VizWiz,
+    Display,
+    Object,
+    Coord,
+    Circle
+)
+
+engine = Engine() # First step, creating the engine
+vizwiz = VizWiz() # Next, we create the VizWiz
+engine.viz = vizwiz
+display = Display(
+    master=engine.viz,
+    origin=Coord(0, 0),
+    top_right=Coord(400, 300),
+    id="main",
+    scale=20
+) # This is how you create the display.
+vizwiz.add_display(display)
+
+# In this project, we'll create a fake gradient.
+gradient = Object(
+    master=display,
+    origin=Coord(0, 0),
+    id="gradient"
+)
+
+for x in range(51):
+    segment = Circle(
+        origin=Coord(0,0),
+        radius=(50-x)/20,
+        specs={"color": f"#{round(255-x*5.1):02x}{round(255-x*5.1):02x}{round(255-x*5.1):02x}", "width": 3}
+    )
+    gradient.add_shape(segment)
+display.add_object("gradient", gradient) # Finally, we add the gradient to the display.
+
+fps = 60
+while True:
+    engine.draw_frame()
+    time.sleep(1 / fps)
+
+# This looks very good! Gradients coming by or in Vispen v2.0!
 ```
 ---
 

@@ -1,6 +1,6 @@
 """
-Vispen v1.4.1
-Added polygon class and fixed rendering for Screen class.
+Vispen v1.5.1b
+Added triangle hitbox. This has not been tested, however.
 """
 from __future__ import annotations
 from typing import Sequence
@@ -301,9 +301,9 @@ class HitboxRect(HitboxObject):
         self.origin = self.origin + point
         self.top_right = self.top_right + point
 
-    def convert(self) -> tuple[Coord, Coord]:
+    def convert(self) -> tuple[Coord, Coord, Coord, Coord]:
         """Convert rectangle corners to screen coordinates."""
-        return self.master.convert(self.origin), self.master.convert(self.top_right)
+        return self.master.convert(self.origin), self.master.convert(self.top_right), self.master.convert(Coord(self.origin.x, self.top_right.y)), self.master.convert(Coord(self.top_right.x, self.origin.y))
 
     def intersects(self, other: "HitboxObject | Hitbox") -> bool:
         """Check intersection with another hitbox object or hitbox."""
@@ -318,7 +318,7 @@ class HitboxRect(HitboxObject):
             closest_x = max(self.convert()[0].x, min(other.origin.x, self.convert()[1].x))
             closest_y = max(self.convert()[0].y, min(other.origin.y, self.convert()[1].y))
             distance = utils.distance(Coord(closest_x, closest_y), other.origin)
-            return distance < other.radius
+            return distance < other.convertrad()
         elif isinstance(other, HitboxPoint):
             return (
                 other.convert().x >= self.convert()[0].x
@@ -331,14 +331,32 @@ class HitboxRect(HitboxObject):
                 if self.intersects(shape):
                     return True
             return False
+        elif isinstance(other, HitboxTriangle):
+            segment_intersection_list = [utils.segments_intersect(Q1, Q2, P1, P2) for Q1, Q2 in zip([other.convert()[0], other.convert()[1], other.convert()[2]], [other.convert()[1], other.convert()[2], other.convert()[0]]) for P1, P2 in zip([self.convert()[0], self.convert()[2], self.convert()[1], self.convert()[3]], [self.convert()[2], self.convert()[1], self.convert()[3], self.convert()[0]])]
+            segment_intersection = any(segment_intersection_list)
+            return (self.intersects(other.pointhitbox(0)) or self.intersects(other.pointhitbox(1)) or self.intersects(other.pointhitbox(2))) or (other.intersects(self.pointhitbox(0)) or other.intersects(self.pointhitbox(1)) or other.intersects(self.pointhitbox(2)) or other.intersects(self.pointhitbox(3))) or segment_intersection
         else:
             raise NotImplementedError("Intersection not implemented for this shape type.")
 
+    def pointhitbox(self, point):
+        """Gets a point of self as a HitboxPoint."""
+        #21
+        #03
+        if point == 0:
+            return HitboxPoint(self.hitbox, self.origin, self.master)
+        if point == 1:
+            return HitboxPoint(self.hitbox, self.top_right, self.master)
+        if point == 2:
+            return HitboxPoint(self.hitbox, Coord(self.origin.x, self.top_right.y), self.master)
+        if point == 3:
+            return HitboxPoint(self.hitbox, Coord(self.top_right.x, self.origin.y), self.master)
+        else:
+            raise KeyError("Point does not exist.")
 
 class HitboxCircle(HitboxObject):
     """Circular hitbox."""
 
-    def __init__(self, hitbox: Optional[Hitbox], origin: Coord, radius: int | float, master: Display) -> None:
+    def __init__(self, hitbox: Optional[Hitbox], origin: Coord, radius: int | float, master: Display | Screen) -> None:
         """Initialize a circular hitbox."""
         super().__init__(hitbox, origin, master)
         self.radius: float = float(radius)
@@ -351,11 +369,18 @@ class HitboxCircle(HitboxObject):
         """Convert circle center to screen coordinates."""
         return self.master.convert(self.origin)
 
+    def convertrad(self) -> float:
+        """Convert circle radius to screen radius."""
+        try:
+            return self.master.zoom_factor * self.radius # type: ignore
+        except AttributeError:
+            return self.radius
+
     def intersects(self, other: "HitboxObject | Hitbox") -> bool:
         """Check intersection with another hitbox object or hitbox."""
         if isinstance(other, HitboxCircle):
             distance = utils.distance(self.convert(), other.convert())
-            return distance < (self.radius + other.radius)
+            return distance < (self.convertrad() + other.convertrad())
         elif isinstance(other, HitboxRect):
             closest_x = max(other.convert()[0].x, min(self.convert().x, other.convert()[1].x))
             closest_y = max(other.convert()[0].y, min(self.convert().y, other.convert()[1].y))
@@ -369,8 +394,14 @@ class HitboxCircle(HitboxObject):
                 if self.intersects(shape):
                     return True
             return False
+        elif isinstance(other, HitboxTriangle):
+            return (other.intersects(self.originhitbox())) or (utils.circle_intersect(self.convert(), self.convertrad(), other.convert()[0], other.convert()[1]) or utils.circle_intersect(self.convert(), self.convertrad(), other.convert()[0], other.convert()[2]) or utils.circle_intersect(self.convert(), self.convertrad(), other.convert()[1], other.convert()[2]))
         else:
             raise NotImplementedError("Intersection not implemented for this shape type.")
+
+    def originhitbox(self):
+        """Gets self's center as a hitbox point."""
+        return HitboxPoint(self.hitbox, self.origin, self.master)
 
 
 class HitboxPoint(HitboxObject):
@@ -392,7 +423,7 @@ class HitboxPoint(HitboxObject):
         """Check intersection with another hitbox object or hitbox."""
         if isinstance(other, HitboxCircle):
             distance = utils.distance(self.convert(), other.convert())
-            return distance < other.radius
+            return distance < other.convertrad()
         elif isinstance(other, HitboxRect):
             return (
                 self.convert().x >= other.convert()[0].x
@@ -410,8 +441,63 @@ class HitboxPoint(HitboxObject):
                 if self.intersects(shape):
                     return True
             return False
+        elif isinstance(other, HitboxTriangle):
+            return utils.area(other.convert()[0], other.convert()[1], other.convert()[2]) - utils.area(other.convert()[0], other.convert()[1], self.convert()) - utils.area(other.convert()[0], self.convert(), other.convert()[2]) - utils.area(self.convert(), other.convert()[1], other.convert()[2]) < 10e-8
         else:
             raise NotImplementedError("Intersection not implemented for this shape type.")
+
+
+class HitboxTriangle(HitboxObject):
+    """Triangle hitbox."""
+    def __init__(self, hitbox: Optional[Hitbox], origin: Coord, point1: Coord, point2: Coord, master: Display) -> None:
+        """Initialize a triangle hitbox."""
+        super().__init__(hitbox, origin, master)
+        self.point1 = point1
+        self.point2 = point2
+
+    def shift(self, point: Coord) -> None:
+        """Shift the point hitbox."""
+        self.origin = self.origin + point
+        self.point1 = self.point1 + point
+        self.point2 = self.point2 + point
+
+    def convert(self) -> tuple[Coord, Coord, Coord]:
+        """Convert point to screen coordinates."""
+        return self.master.convert(self.origin), self.master.convert(self.point1), self.master.convert(self.point2)
+
+    def intersects(self, other: "HitboxObject | Hitbox") -> bool:
+        """Check intersection with another hitbox object or hitbox."""
+        if isinstance(other, HitboxPoint):
+            return utils.area(self.convert()[0], self.convert()[1], self.convert()[2]) - utils.area(self.convert()[0], self.convert()[1], other.convert()) - utils.area(self.convert()[0], other.convert(), self.convert()[2]) - utils.area(other.convert(), self.convert()[1], self.convert()[2]) < 10e-8
+        elif isinstance(other, HitboxCircle):
+            return (self.intersects(other.originhitbox())) or (utils.circle_intersect(other.convert(), other.convertrad(), self.convert()[0], self.convert()[1]) or utils.circle_intersect(other.convert(), other.convertrad(), self.convert()[0], self.convert()[2]) or utils.circle_intersect(other.convert(), other.convertrad(), self.convert()[1], self.convert()[2]))
+        elif isinstance(other, HitboxRect):
+            segment_intersection_list = [utils.segments_intersect(P1, P2, Q1, Q2) for P1, P2 in zip([self.convert()[0], self.convert()[1], self.convert()[2]], [self.convert()[1], self.convert()[2], self.convert()[0]]) for Q1, Q2 in zip([other.convert()[0], other.convert()[2], other.convert()[1], other.convert()[3]], [other.convert()[2], other.convert()[1], other.convert()[3], other.convert()[0]])]
+            segment_intersection = any(segment_intersection_list)
+            return (other.intersects(self.pointhitbox(0)) or other.intersects(self.pointhitbox(1)) or other.intersects(self.pointhitbox(2))) or (self.intersects(other.pointhitbox(0)) or self.intersects(other.pointhitbox(1)) or self.intersects(other.pointhitbox(2)) or self.intersects(other.pointhitbox(3))) or segment_intersection
+        elif isinstance(other, HitboxTriangle):
+            segment_intersection_list = [utils.segments_intersect(P1, P2, Q1, Q2) for P1, P2 in zip([self.convert()[0], self.convert()[1], self.convert()[2]], [self.convert()[1], self.convert()[2], self.convert()[0]]) for Q1, Q2 in zip([other.convert()[0], other.convert()[1], other.convert()[2]], [other.convert()[1], other.convert()[2], other.convert()[0]])]
+            segment_intersection = any(segment_intersection_list)
+            return (other.intersects(self.pointhitbox(0)) or other.intersects(self.pointhitbox(1)) or other.intersects(self.pointhitbox(2))) or (self.intersects(other.pointhitbox(0)) or self.intersects(other.pointhitbox(1)) or self.intersects(other.pointhitbox(2))) or segment_intersection
+        elif isinstance(other, Hitbox):
+            for shape in other.shapes:
+                if self.intersects(shape):
+                    return True
+            return False
+        else:
+            raise NotImplementedError("Intersection not implemented for this shape type.")          
+
+    def pointhitbox(self, point:int) -> HitboxPoint:
+        """Gets a point of self as a HitboxPoint."""
+        if point == 0:
+            return HitboxPoint(self.hitbox, self.origin, self.master)
+        if point == 1:
+            return HitboxPoint(self.hitbox, self.point1, self.master)
+        if point == 2:
+            return HitboxPoint(self.hitbox, self.point2, self.master)
+        else:
+            raise KeyError("Point does not exist.")
+
 
 
 class Object:
@@ -851,7 +937,7 @@ class Display:
 
     def convert(self, point:Coord) -> Coord:
         """Convert a local point to screen coordinates."""
-        return (point + self.origin) * self.scale
+        return point * self.scale + self.origin
 
 
 class Screen(Display):
