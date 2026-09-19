@@ -162,11 +162,13 @@ Classes:
   - Segment
   - Rect
   - Circle
+  - Polygon
 - Hitbox
 - HitboxObject
   - HitboxRect
   - HitboxCircle
   - HitboxPoint
+  - HitboxTriangle
 - Object
 - Interpolation
   - LinTerp
@@ -244,6 +246,7 @@ There are currently 5 subclasses:
 
   Additional attributes:
   - `Polygon.points`: list of points.
+  - Note that `Polygon` does not have an origin attribute; it is simply `Polygon.points[0]`.
 
   Modified methods:
   - `def __init__(self, points: List[Coord], specs: Optional[Dict[str, Any]] = None) -> None:` Initialize polygon at origin with points.
