@@ -1,10 +1,11 @@
 !v1.3.  Completely rework mouse with gesture support.
-v1.3+.  Add a Keyboard class.
 !v1.4.  Add a new shape called Polygon.
-v1.4+.  Add a new shape called 1D Gradient.
-v1.5.   Add a right-triangle hitbox.
-        Add a general triangle hitbox.
+v1.5.   !Add a right-triangle hitbox.
+        !Add a general triangle hitbox.
         Add a polygon hitbox (with triangulation, OBVIOUSLY).
+        Add a keyboard class.
+        Add a generator class (So like, you can create points easily by literally just hacking an interpolation lol).
+                Add a new shape called 1D Gradient. (This is kinda under generators)
 v1.6.   Make hitbox objects able to contain hitbox objects able to contain hitbox objects able to contain... .
         Add a hitbox class that takes intersections of hitboxes (by creating random sample points of a certain density).
         Add hitbox-minus the same way (like hitbox A but you ate the part that's hitbox B).
